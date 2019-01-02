@@ -18,7 +18,7 @@ open class PostgresConnectionFactoryConfiguration @Autowired constructor(
   private val logger = LoggerFactory.getLogger(PostgresConnectionFactoryConfiguration::class.java)
 
   init {
-    if (logger.isWarnEnabled) logger.warn("R2dbcProperties={}", properties.copy(password = "***"))
+    if (logger.isDebugEnabled) logger.debug("R2dbcProperties={}", properties.copy(password = "***"))
   }
 
   @Bean

@@ -18,7 +18,7 @@ open class H2ConnectionFactoryConfiguration @Autowired constructor(
   private val logger = LoggerFactory.getLogger(H2ConnectionFactoryConfiguration::class.java)
 
   init {
-    if (logger.isWarnEnabled) logger.warn("R2dbcProperties={}", properties.copy(password = "***"))
+    if (logger.isDebugEnabled) logger.debug("R2dbcProperties={}", properties.copy(password = "***"))
   }
 
   @Bean
