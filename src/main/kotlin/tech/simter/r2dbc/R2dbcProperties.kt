@@ -1,6 +1,9 @@
 package tech.simter.r2dbc
 
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
 import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.jdbc.DataSourceInitializationMode
+import org.springframework.boot.jdbc.DataSourceInitializationMode.NEVER
 import org.springframework.stereotype.Component
 
 /**
@@ -16,5 +19,7 @@ data class R2dbcProperties(
   var port: Int? = null,
   var username: String? = "test",
   var password: String? = "password",
-  var url: String? = null // for h2
+  var url: String? = null, // for h2
+  var initializationMode: DataSourceInitializationMode = NEVER,
+  var schema: List<String>? = null
 )
