@@ -24,7 +24,7 @@ open class PostgresConnectionFactoryConfiguration @Autowired constructor(
   @Bean
   open fun connectionFactory(): ConnectionFactory {
     val builder = PostgresqlConnectionConfiguration.builder()
-    properties.database?.let { builder.database(it) }
+    properties.name?.let { builder.database(it) }
     properties.host?.let { builder.host(it) }
     properties.username?.let { builder.username(it) }
     properties.password?.let { builder.password(it) }
