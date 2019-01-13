@@ -4,6 +4,7 @@ import io.r2dbc.spi.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
@@ -22,6 +23,7 @@ import static org.springframework.boot.jdbc.DataSourceInitializationMode.NEVER;
  * @author RJ
  */
 @Configuration
+@ComponentScan
 public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
   private final static Logger logger = LoggerFactory.getLogger(R2dbcConfiguration.class);
   private final ConnectionFactory connectionFactory;
