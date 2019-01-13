@@ -4,11 +4,12 @@
   <parent>
     <groupId>tech.simter</groupId>
     <artifactId>simter-parent</artifactId>
-    <version>${revision}</version>
-    <relativePath>../simter-parent</relativePath>
+    <version>1.0.1</version>
+    <relativePath/>
   </parent>
   <artifactId>simter-r2dbc-ext</artifactId>
   <packaging>jar</packaging>
+  <version>1.1.1</version>
   <name>simter-r2dbc-ext</name>
   <description>Simter R2DBC Extension</description>
   <dependencies>
