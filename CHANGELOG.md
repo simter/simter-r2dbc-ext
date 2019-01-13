@@ -1,5 +1,9 @@
 # simter-r2dbc-ext changelog
 
+## 1.1.1 - 2019-01-13
+
+- Add `@ComponentScan` on `R2dbcConfiguration` class
+
 ## 1.1.0 - 2019-01-11
 
 - Convert to java module
