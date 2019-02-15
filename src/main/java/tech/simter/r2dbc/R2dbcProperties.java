@@ -34,4 +34,5 @@ public class R2dbcProperties {
   private String url; // for h2
   private DataSourceInitializationMode initializationMode;
   private List<String> schema;
+  private List<String> data;
 }
