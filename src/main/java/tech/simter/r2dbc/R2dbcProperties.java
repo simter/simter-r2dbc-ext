@@ -25,6 +25,7 @@ import java.util.List;
 @Wither
 @Builder(toBuilder = true)
 public class R2dbcProperties {
+  private String platform;
   private String name;
   private String host;
   private Integer port;
