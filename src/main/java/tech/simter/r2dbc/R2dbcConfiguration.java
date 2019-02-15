@@ -50,7 +50,9 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
       Flux.fromIterable(properties.getSchema())
         .map(it -> {
           try {
-            return FileCopyUtils.copyToString(new InputStreamReader(resourcePatternResolver.getResource(it).getInputStream()));
+            return FileCopyUtils.copyToString(new InputStreamReader(
+              resourcePatternResolver.getResource(it).getInputStream(), StandardCharsets.UTF_8
+            ));
           } catch (IOException e) {
             throw new RuntimeException(e.getMessage(), e);
           }
