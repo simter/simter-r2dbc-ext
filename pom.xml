@@ -8,7 +8,7 @@
     <relativePath>../simter-parent</relativePath>
   </parent>
   <artifactId>simter-r2dbc-ext</artifactId>
-  <version>1.2-SNAPSHOT</version>
+  <version>1.2.0</version>
   <packaging>jar</packaging>
   <name>simter-r2dbc-ext</name>
   <description>Simter R2DBC Extension</description>
