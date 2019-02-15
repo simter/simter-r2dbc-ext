@@ -1,5 +1,11 @@
 # simter-r2dbc-ext changelog
 
+## 1.2.0 - 2019-02-15
+
+- Read SQL file with encoding UTF-8
+- Add platform and data property to R2dbcProperties
+- Save concatenate SQL content to file `target/${db.platform}.sql` if log level is info
+
 ## 1.1.1 - 2019-01-13
 
 - Add `@ComponentScan` on `R2dbcConfiguration` class
