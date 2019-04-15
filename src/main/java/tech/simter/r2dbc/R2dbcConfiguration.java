@@ -7,13 +7,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.util.FileCopyUtils;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -44,12 +45,11 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
     return this.connectionFactory;
   }
 
-  @PostConstruct
-  public void init() {
+  // initial database by execute SQL script through R2dbcProperties.schema|data config
+  @EventListener
+  public void onApplicationEvent(ContextRefreshedEvent event) {
     if (properties.getInitializationMode() == null || properties.getInitializationMode() == NEVER) return;
     ResourceLoader resourcePatternResolver = new PathMatchingResourcePatternResolver();
-
-    // initial database by execute SQL script through R2dbcProperties.schema|data config
 
     // 1. concat schema and data
     List<String> sqlResources = new ArrayList<>();
