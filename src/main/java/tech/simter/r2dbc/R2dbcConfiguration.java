@@ -82,6 +82,7 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
     }
 
     // 3. execute sql
+    logger.warn("Executing spring.datasource.schema|data scripts to database");
     Mono.from(connectionFactory().create())
       .flatMapMany(c -> c.createStatement(sql.toString()).execute())
       .flatMap(Result::getRowsUpdated)
