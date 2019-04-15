@@ -5,6 +5,7 @@ import io.r2dbc.spi.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -33,11 +34,14 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
   private final static Logger logger = LoggerFactory.getLogger(R2dbcConfiguration.class);
   private final ConnectionFactory connectionFactory;
   private final R2dbcProperties properties;
+  private boolean concatSqlScript;
 
   @Autowired
-  public R2dbcConfiguration(ConnectionFactory connectionFactory, R2dbcProperties properties) {
+  public R2dbcConfiguration(ConnectionFactory connectionFactory, R2dbcProperties properties,
+                            @Value("${spring.datasource.concat-sql-script:false}") boolean concatSqlScript) {
     this.connectionFactory = connectionFactory;
     this.properties = properties;
+    this.concatSqlScript = concatSqlScript;
   }
 
   @Override
@@ -48,7 +52,8 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
   // initial database by execute SQL script through R2dbcProperties.schema|data config
   @EventListener
   public void onApplicationEvent(ContextRefreshedEvent event) {
-    if (properties.getInitializationMode() == null || properties.getInitializationMode() == NEVER) return;
+    if (properties.getInitializationMode() == null || properties.getInitializationMode() == NEVER)
+      return;
     ResourceLoader resourcePatternResolver = new PathMatchingResourcePatternResolver();
 
     // 1. concat schema and data
@@ -66,7 +71,7 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
     }
 
     // 2. save concatenate sql content to file
-    if (logger.isInfoEnabled()) {
+    if (concatSqlScript) {
       File sqlFile = new File("target/" + properties.getPlatform() + ".sql");
       logger.info("Save concatenate SQL script to {}", sqlFile.getAbsolutePath());
       try {
