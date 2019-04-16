@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Wither;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceInitializationMode;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -17,7 +16,6 @@ import java.util.List;
  *
  * @author RJ
  */
-@Component
 @ConfigurationProperties(prefix = "spring.datasource")
 @Data
 @AllArgsConstructor
