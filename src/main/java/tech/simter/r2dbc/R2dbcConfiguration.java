@@ -1,7 +1,8 @@
 package tech.simter.r2dbc;
 
+import io.r2dbc.client.R2dbc;
 import io.r2dbc.spi.ConnectionFactory;
-import io.r2dbc.spi.Result;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,14 +16,17 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.util.FileCopyUtils;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.springframework.boot.jdbc.DataSourceInitializationMode.NEVER;
 
@@ -52,8 +56,8 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
   }
 
   // initial database by execute SQL script through R2dbcProperties.schema|data config
-  @EventListener
-  public void onApplicationEvent(ContextRefreshedEvent event) {
+  @EventListener(ContextRefreshedEvent.class)
+  public void onApplicationEvent() {
     if (properties.getInitializationMode() == null || properties.getInitializationMode() == NEVER)
       return;
     ResourceLoader resourcePatternResolver = new PathMatchingResourcePatternResolver();
@@ -63,12 +67,15 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
     if (properties.getSchema() != null) sqlResources.addAll(properties.getSchema());
     if (properties.getData() != null) sqlResources.addAll(properties.getData());
     if (sqlResources.isEmpty()) return;
-    StringBuffer sql = new StringBuffer();
+    StringBuilder sql = new StringBuilder();
+    Map<String, String> scriptContents = new LinkedHashMap<>();
     for (int i = 0; i < sqlResources.size(); i++) {
       String resourcePath = sqlResources.get(i);
-      logger.info("Load script from {}", resourcePath);
+      //logger.info("Load script from {}", resourcePath);
+      String scriptContent = loadSql(resourcePath, resourcePatternResolver);
+      scriptContents.put(resourcePath, scriptContent);
       sql.append("-- copy from ").append(resourcePath).append("\r\n\r\n")
-        .append(loadSql(resourcePath, resourcePatternResolver));
+        .append(scriptContent);
       if (i < sqlResources.size() - 1) sql.append("\r\n\r\n");
     }
 
@@ -83,14 +90,21 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
       }
     }
 
-    // 3. execute sql
+    // 3. execute sql one by one
     logger.warn("Executing spring.datasource.schema|data scripts to database");
-    Mono.from(connectionFactory().create())
-      .flatMapMany(c -> c.createStatement(sql.toString()).execute())
-      .flatMap(Result::getRowsUpdated)
-      .doOnNext(count -> logger.debug("result.getRowsUpdated={}", count))
-      .doOnError(e -> logger.error(e.getMessage(), e))
-      .subscribe();
+    new R2dbc(connectionFactory).useTransaction(handle -> {
+      List<Publisher<Integer>> sources = new ArrayList<>();
+      int i = 0, len = scriptContents.size();
+      for (Map.Entry<String, String> e : scriptContents.entrySet()) {
+        int j = ++i;
+        sources.add(
+          handle.execute(e.getValue())
+            .doOnComplete(() -> logger.info("{}/{} Success executed script {}", j, len, e.getKey()))
+            .doOnError(t -> logger.warn("{}/{} Failed executed script {}", j, len, e.getKey()))
+        );
+      }
+      return Flux.concat(sources);
+    }).block(Duration.ofSeconds(10));
   }
 
   private String loadSql(String resourcePath, ResourceLoader resourcePatternResolver) {
