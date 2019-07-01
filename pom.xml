@@ -12,6 +12,11 @@
   <packaging>jar</packaging>
   <name>simter-r2dbc-ext</name>
   <description>Simter R2DBC Extension</description>
+  <properties>
+    <spring.version>${spring.milestone.version}</spring.version>
+    <spring-data-releasetrain.version>${spring-data-releasetrain.milestone.version}</spring-data-releasetrain.version>
+    <spring-boot.version>${spring-boot.milestone.version}</spring-boot.version>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>javax.annotation</groupId>
