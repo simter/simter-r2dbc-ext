@@ -1,5 +1,13 @@
 # simter-r2dbc-ext changelog
 
+## 1.3.0 - 2019-07-03
+
+- Change parent to simter-dependencies-1.2.0
+- Change init database lifecycle to ContextRefreshedEvent - after all bean initialized
+- Add concat-sql-script control by property spring.datasource.concat-sql-script
+- Execute spring.datasource.schema|data script one by one
+- Set spring milestone version config
+
 ## 1.2.0 - 2019-02-15
 
 - Read SQL file with encoding UTF-8
