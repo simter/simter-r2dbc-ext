@@ -1,5 +1,9 @@
 # simter-r2dbc-ext changelog
 
+## 1.4.0-M1 - 2019-10-08
+
+- Upgrade to simter-dependencies-1.3.0-M2 (r2dbc-0.8.0.RC2)
+
 ## 1.3.0 - 2019-07-03
 
 - Change parent to simter-dependencies-1.2.0
