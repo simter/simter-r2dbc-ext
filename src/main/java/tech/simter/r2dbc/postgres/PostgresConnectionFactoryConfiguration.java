@@ -20,7 +20,7 @@ public class PostgresConnectionFactoryConfiguration {
   @Autowired
   public PostgresConnectionFactoryConfiguration(R2dbcProperties properties) {
     this.properties = properties;
-    if (logger.isDebugEnabled()) logger.debug("R2dbcProperties={}", properties.withPassword("***"));
+    if (logger.isDebugEnabled()) logger.debug("R2dbcProperties={}", properties);
   }
 
   @Bean
