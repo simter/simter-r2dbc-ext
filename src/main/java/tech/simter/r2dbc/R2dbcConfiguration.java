@@ -1,8 +1,8 @@
 package tech.simter.r2dbc;
 
-import io.r2dbc.client.R2dbc;
+import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
-import org.reactivestreams.Publisher;
+import io.r2dbc.spi.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +17,7 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.util.FileCopyUtils;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.IOException;
@@ -92,19 +93,33 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
 
     // 3. execute sql one by one
     logger.warn("Executing spring.datasource.schema|data scripts to database");
-    new R2dbc(connectionFactory).useTransaction(handle -> {
-      List<Publisher<Integer>> sources = new ArrayList<>();
-      int i = 0, len = scriptContents.size();
-      for (Map.Entry<String, String> e : scriptContents.entrySet()) {
-        int j = ++i;
-        sources.add(
-          handle.execute(e.getValue())
-            .doOnComplete(() -> logger.info("{}/{} Success executed script {}", j, len, e.getKey()))
-            .doOnError(t -> logger.warn("{}/{} Failed executed script {}", j, len, e.getKey()))
-        );
-      }
-      return Flux.concat(sources);
-    }).block(Duration.ofSeconds(10));
+    Mono.from(connectionFactory.create())
+      .flatMapMany(connection -> Mono.from(connection.beginTransaction())
+        .thenMany(executeAllSql(connection, scriptContents))
+        .delayUntil(t -> connection.commitTransaction())
+        .onErrorResume(t -> Mono.from(connection.rollbackTransaction()).then(Mono.error(t)))
+      )
+      .blockLast(Duration.ofSeconds(10));
+  }
+
+  private Flux<Integer> executeAllSql(Connection connection, Map<String, String> allSql) {
+    List<Flux<Integer>> sources = new ArrayList<>();
+    int i = 0, len = allSql.size();
+    for (Map.Entry<String, String> e : allSql.entrySet()) {
+      int j = ++i;
+      sources.add(
+        executeSql(connection, e.getValue())
+          .doOnComplete(() -> logger.info("{}/{} Success executed script {}", j, len, e.getKey()))
+          .doOnError(t -> logger.warn("{}/{} Failed executed script {}", j, len, e.getKey()))
+      );
+    }
+    return Flux.concat(sources);
+  }
+
+  private Flux<Integer> executeSql(Connection connection, String sql) {
+    return Flux
+      .from(connection.createStatement(sql).execute())
+      .flatMap(Result::getRowsUpdated);
   }
 
   private String loadSql(String resourcePath, ResourceLoader resourcePatternResolver) {
