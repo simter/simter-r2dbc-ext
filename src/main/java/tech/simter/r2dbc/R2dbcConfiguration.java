@@ -5,6 +5,7 @@ import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.springframework.boot.jdbc.DataSourceInitializationMode.NEVER;
 
@@ -39,13 +41,19 @@ import static org.springframework.boot.jdbc.DataSourceInitializationMode.NEVER;
 @EnableConfigurationProperties(R2dbcProperties.class)
 public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
   private final static Logger logger = LoggerFactory.getLogger(R2dbcConfiguration.class);
+  private final ObjectProvider<R2dbcCustomConverter<?, ?>> r2dbcCustomConverters;
   private final ConnectionFactory connectionFactory;
   private final R2dbcProperties properties;
   private boolean concatSqlScript;
 
   @Autowired
-  public R2dbcConfiguration(ConnectionFactory connectionFactory, R2dbcProperties properties,
-                            @Value("${spring.datasource.concat-sql-script:false}") boolean concatSqlScript) {
+  public R2dbcConfiguration(
+    ObjectProvider<R2dbcCustomConverter<?, ?>> r2dbcCustomConverters,
+    ConnectionFactory connectionFactory,
+    R2dbcProperties properties,
+    @Value("${spring.datasource.concat-sql-script:false}") boolean concatSqlScript
+  ) {
+    this.r2dbcCustomConverters = r2dbcCustomConverters;
     this.connectionFactory = connectionFactory;
     this.properties = properties;
     this.concatSqlScript = concatSqlScript;
@@ -54,6 +62,16 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
   @Override
   public ConnectionFactory connectionFactory() {
     return this.connectionFactory;
+  }
+
+  @Override
+  protected List<Object> getCustomConverters() {
+    List<Object> customConverters = r2dbcCustomConverters.stream().collect(Collectors.toList());
+    if (!customConverters.isEmpty()) {
+      logger.info("register custom r2dbc converters: (total {})", customConverters.size());
+      customConverters.forEach(c -> logger.info("  {}", c.getClass().getCanonicalName()));
+    }
+    return customConverters;
   }
 
   // initial database by execute SQL script through R2dbcProperties.schema|data config
