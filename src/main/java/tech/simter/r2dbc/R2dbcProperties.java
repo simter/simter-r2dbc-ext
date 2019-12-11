@@ -13,6 +13,7 @@ import java.util.List;
  */
 @ConfigurationProperties(prefix = "spring.datasource")
 public class R2dbcProperties {
+  private String protocol; // for h2: file|mem
   private String platform;
   private String name;
   private String host;
@@ -23,6 +24,14 @@ public class R2dbcProperties {
   private DataSourceInitializationMode initializationMode;
   private List<String> schema;
   private List<String> data;
+
+  public String getProtocol() {
+    return protocol;
+  }
+
+  public void setProtocol(String protocol) {
+    this.protocol = protocol;
+  }
 
   public String getPlatform() {
     return platform;
