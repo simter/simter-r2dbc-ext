@@ -1,10 +1,11 @@
 package tech.simter.r2dbc;
 
-import io.r2dbc.client.R2dbc;
+import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
-import org.reactivestreams.Publisher;
+import io.r2dbc.spi.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -17,6 +18,7 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.util.FileCopyUtils;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,10 +29,18 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.springframework.boot.jdbc.DataSourceInitializationMode.NEVER;
 
 /**
+ * A {@link AbstractR2dbcConfiguration} implementation with special features:<br>
+ * <p>
+ * 1. Auto init database by {@link R2dbcProperties}'s initializationMode, schema and data config. <br>
+ * 2. If `spring.datasource.concat-sql-script=true`, concat all schema and data sql files
+ * to a single sql file `target/{platform}.sql`.<br>
+ * 3. Auto register all {@link R2dbcCustomConverter} spring bean instances for r2dbc.
+ *
  * @author RJ
  */
 @Configuration
@@ -38,13 +48,19 @@ import static org.springframework.boot.jdbc.DataSourceInitializationMode.NEVER;
 @EnableConfigurationProperties(R2dbcProperties.class)
 public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
   private final static Logger logger = LoggerFactory.getLogger(R2dbcConfiguration.class);
+  private final ObjectProvider<R2dbcCustomConverter<?, ?>> r2dbcCustomConverters;
   private final ConnectionFactory connectionFactory;
   private final R2dbcProperties properties;
   private boolean concatSqlScript;
 
   @Autowired
-  public R2dbcConfiguration(ConnectionFactory connectionFactory, R2dbcProperties properties,
-                            @Value("${spring.datasource.concat-sql-script:false}") boolean concatSqlScript) {
+  public R2dbcConfiguration(
+    ObjectProvider<R2dbcCustomConverter<?, ?>> r2dbcCustomConverters,
+    ConnectionFactory connectionFactory,
+    R2dbcProperties properties,
+    @Value("${spring.datasource.concat-sql-script:false}") boolean concatSqlScript
+  ) {
+    this.r2dbcCustomConverters = r2dbcCustomConverters;
     this.connectionFactory = connectionFactory;
     this.properties = properties;
     this.concatSqlScript = concatSqlScript;
@@ -53,6 +69,16 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
   @Override
   public ConnectionFactory connectionFactory() {
     return this.connectionFactory;
+  }
+
+  @Override
+  protected List<Object> getCustomConverters() {
+    List<Object> customConverters = r2dbcCustomConverters.stream().collect(Collectors.toList());
+    if (!customConverters.isEmpty()) {
+      logger.info("register custom r2dbc converters: (total {})", customConverters.size());
+      customConverters.forEach(c -> logger.info("  {}", c.getClass().getCanonicalName()));
+    }
+    return customConverters;
   }
 
   // initial database by execute SQL script through R2dbcProperties.schema|data config
@@ -92,19 +118,33 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
 
     // 3. execute sql one by one
     logger.warn("Executing spring.datasource.schema|data scripts to database");
-    new R2dbc(connectionFactory).useTransaction(handle -> {
-      List<Publisher<Integer>> sources = new ArrayList<>();
-      int i = 0, len = scriptContents.size();
-      for (Map.Entry<String, String> e : scriptContents.entrySet()) {
-        int j = ++i;
-        sources.add(
-          handle.execute(e.getValue())
-            .doOnComplete(() -> logger.info("{}/{} Success executed script {}", j, len, e.getKey()))
-            .doOnError(t -> logger.warn("{}/{} Failed executed script {}", j, len, e.getKey()))
-        );
-      }
-      return Flux.concat(sources);
-    }).block(Duration.ofSeconds(10));
+    Mono.from(connectionFactory.create())
+      .flatMapMany(connection -> Mono.from(connection.beginTransaction())
+        .thenMany(executeAllSql(connection, scriptContents))
+        .delayUntil(t -> connection.commitTransaction())
+        .onErrorResume(t -> Mono.from(connection.rollbackTransaction()).then(Mono.error(t)))
+      )
+      .blockLast(Duration.ofSeconds(10));
+  }
+
+  private Flux<Integer> executeAllSql(Connection connection, Map<String, String> allSql) {
+    List<Flux<Integer>> sources = new ArrayList<>();
+    int i = 0, len = allSql.size();
+    for (Map.Entry<String, String> e : allSql.entrySet()) {
+      int j = ++i;
+      sources.add(
+        executeSql(connection, e.getValue())
+          .doOnComplete(() -> logger.info("{}/{} Success executed script {}", j, len, e.getKey()))
+          .doOnError(t -> logger.warn("{}/{} Failed executed script {}", j, len, e.getKey()))
+      );
+    }
+    return Flux.concat(sources);
+  }
+
+  private Flux<Integer> executeSql(Connection connection, String sql) {
+    return Flux
+      .from(connection.createStatement(sql).execute())
+      .flatMap(Result::getRowsUpdated);
   }
 
   private String loadSql(String resourcePath, ResourceLoader resourcePatternResolver) {
