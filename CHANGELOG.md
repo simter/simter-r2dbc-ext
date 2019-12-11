@@ -1,8 +1,21 @@
 # simter-r2dbc-ext changelog
 
+## 1.4.0-M2 - 2019-12-11
+
+- Upgrade to simter-dependencies-1.3.0-M9 (r2dbc-Arabba-RELEASE)
+- Support auto register all `R2dbcCustomConverter` beans for r2dbc custom converters
+- Add `tech.simter.r2dbc.R2dbcCustomConverter<S, T> extends Converter<S, T>` marker interface
+- Remove lombok
+- Remove r2dbc-client
+- Change to use ['r2dbc ConnectionFactory Discovery Mechanism'] to generate `ConnectionFactory` instance
+- Add protocol property to R2dbcProperties for h2
+- Add dev.miku:r2dbc-mysql optional dependency
+
+['r2dbc ConnectionFactory Discovery Mechanism']: https://r2dbc.io/spec/0.8.0.RELEASE/spec/html/#connections.factory.discovery
+
 ## 1.4.0-M1 - 2019-10-08
 
-- Upgrade to simter-dependencies-1.3.0-M2 (r2dbc-0.8.0.RC2)
+- Upgrade to simter-dependencies-1.3.0-M2 (r2dbc-Arabba-RC2)
 
 ## 1.3.0 - 2019-07-03
 
