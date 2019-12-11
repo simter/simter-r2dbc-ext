@@ -34,6 +34,13 @@ import java.util.stream.Collectors;
 import static org.springframework.boot.jdbc.DataSourceInitializationMode.NEVER;
 
 /**
+ * A {@link AbstractR2dbcConfiguration} implementation with special features:<br>
+ * <p>
+ * 1. Auto init database by {@link R2dbcProperties}'s initializationMode, schema and data config. <br>
+ * 2. If `spring.datasource.concat-sql-script=true`, concat all schema and data sql files
+ * to a single sql file `target/{platform}.sql`.<br>
+ * 3. Auto register all {@link R2dbcCustomConverter} spring bean instances for r2dbc.
+ *
  * @author RJ
  */
 @Configuration
