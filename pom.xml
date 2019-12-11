@@ -47,6 +47,11 @@
       <artifactId>r2dbc-mssql</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>dev.miku</groupId>
+      <artifactId>r2dbc-mysql</artifactId>
+      <optional>true</optional>
+    </dependency>
 
     <!-- test -->
     <dependency>
