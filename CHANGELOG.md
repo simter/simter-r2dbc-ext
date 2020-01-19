@@ -1,5 +1,11 @@
 # simter-r2dbc-ext changelog
 
+## 1.4.0-M3 - 2020-01-19
+
+- Upgrade to simter-dependencies-1.3.0-M12
+- Rename `R2dbcCustomConverter<S, T>` to `SimterR2dbcConverter<S, T>`
+- Support bidirectional r2dbc converter by `SimterR2dbcBiConverter<S, T> extends SimterR2dbcConverter<S, T>`
+
 ## 1.4.0-M2 - 2019-12-11
 
 - Upgrade to simter-dependencies-1.3.0-M9 (r2dbc-Arabba-RELEASE)
