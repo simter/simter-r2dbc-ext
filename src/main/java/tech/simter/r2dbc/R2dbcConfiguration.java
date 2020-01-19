@@ -39,7 +39,7 @@ import static org.springframework.boot.jdbc.DataSourceInitializationMode.NEVER;
  * 1. Auto init database by {@link R2dbcProperties}'s initializationMode, schema and data config. <br>
  * 2. If `spring.datasource.concat-sql-script=true`, concat all schema and data sql files
  * to a single sql file `target/{platform}.sql`.<br>
- * 3. Auto register all {@link R2dbcCustomConverter} spring bean instances for r2dbc.
+ * 3. Auto register all {@link SimterR2dbcConverter} spring bean instances for r2dbc.
  *
  * @author RJ
  */
@@ -48,19 +48,19 @@ import static org.springframework.boot.jdbc.DataSourceInitializationMode.NEVER;
 @EnableConfigurationProperties(R2dbcProperties.class)
 public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
   private final static Logger logger = LoggerFactory.getLogger(R2dbcConfiguration.class);
-  private final ObjectProvider<R2dbcCustomConverter<?, ?>> r2dbcCustomConverters;
+  private final ObjectProvider<SimterR2dbcConverter<?, ?>> simterR2dbcConverters;
   private final ConnectionFactory connectionFactory;
   private final R2dbcProperties properties;
   private boolean concatSqlScript;
 
   @Autowired
   public R2dbcConfiguration(
-    ObjectProvider<R2dbcCustomConverter<?, ?>> r2dbcCustomConverters,
+    ObjectProvider<SimterR2dbcConverter<?, ?>> simterR2dbcConverters,
     ConnectionFactory connectionFactory,
     R2dbcProperties properties,
     @Value("${spring.datasource.concat-sql-script:false}") boolean concatSqlScript
   ) {
-    this.r2dbcCustomConverters = r2dbcCustomConverters;
+    this.simterR2dbcConverters = simterR2dbcConverters;
     this.connectionFactory = connectionFactory;
     this.properties = properties;
     this.concatSqlScript = concatSqlScript;
@@ -73,12 +73,20 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
 
   @Override
   protected List<Object> getCustomConverters() {
-    List<Object> customConverters = r2dbcCustomConverters.stream().collect(Collectors.toList());
+    List<Object> customConverters = simterR2dbcConverters.stream().collect(Collectors.toList());
     if (!customConverters.isEmpty()) {
       logger.info("register custom r2dbc converters: (total {})", customConverters.size());
       customConverters.forEach(c -> logger.info("  {}", c.getClass().getCanonicalName()));
     }
-    return customConverters;
+    ArrayList<Object> expandConverters = new ArrayList<>();
+    simterR2dbcConverters.forEach(c -> {
+      if (c instanceof SimterR2dbcBiConverter)
+        expandConverters.addAll(((SimterR2dbcBiConverter<?, ?>) c).getConverters());
+      else
+        expandConverters.add(c);
+    });
+
+    return expandConverters;
   }
 
   // initial database by execute SQL script through R2dbcProperties.schema|data config
