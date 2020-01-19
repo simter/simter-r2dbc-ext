@@ -32,26 +32,6 @@
       <artifactId>spring-data-r2dbc</artifactId>
       <optional>true</optional>
     </dependency>
-    <dependency>
-      <groupId>io.r2dbc</groupId>
-      <artifactId>r2dbc-postgresql</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>io.r2dbc</groupId>
-      <artifactId>r2dbc-h2</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>io.r2dbc</groupId>
-      <artifactId>r2dbc-mssql</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>dev.miku</groupId>
-      <artifactId>r2dbc-mysql</artifactId>
-      <optional>true</optional>
-    </dependency>
 
     <!-- test -->
     <dependency>
