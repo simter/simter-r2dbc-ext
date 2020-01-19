@@ -39,6 +39,8 @@ public class ConnectionFactoryConfiguration {
    * 2. https://github.com/r2dbc/r2dbc-postgres <br>
    * 3. https://github.com/r2dbc/r2dbc-mssql <br>
    * 4. https://github.com/mirromutth/r2dbc-mysql
+   *
+   * @return the connectionFactory
    */
   @Bean
   @ConditionalOnMissingBean(ConnectionFactory.class)
