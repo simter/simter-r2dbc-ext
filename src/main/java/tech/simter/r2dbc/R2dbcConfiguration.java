@@ -127,10 +127,16 @@ public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
     // 3. execute sql one by one
     logger.warn("Executing spring.datasource.schema|data scripts to database");
     Mono.from(connectionFactory.create())
-      .flatMapMany(connection -> Mono.from(connection.beginTransaction())
-        .thenMany(executeAllSql(connection, scriptContents))
-        .delayUntil(t -> connection.commitTransaction())
-        .onErrorResume(t -> Mono.from(connection.rollbackTransaction()).then(Mono.error(t)))
+      .flatMapMany(connection ->
+        Mono.from(connection.beginTransaction())
+          .then(executeAllSql(connection, scriptContents).collectList())
+          .delayUntil(t -> connection.commitTransaction())
+          .onErrorResume(t ->
+            Mono.from(connection.rollbackTransaction())
+              .delayUntil((t2) -> connection.close()) // release connection when error
+              .then(Mono.error(t))
+          )
+          .delayUntil(t -> connection.close()) // release connection when completed
       )
       .blockLast(Duration.ofSeconds(10));
   }
