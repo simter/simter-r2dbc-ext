@@ -117,6 +117,7 @@ public class R2dbcProperties {
   public String toString() {
     return "R2dbcProperties{" +
       "platform='" + platform + "'" +
+      ", protocol='" + protocol + "'" +
       ", name='" + name + "'" +
       ", host='" + host + "'" +
       ", port=" + port +
