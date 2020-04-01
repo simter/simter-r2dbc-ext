@@ -3,6 +3,7 @@ package tech.simter.r2dbc;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
+import io.r2dbc.spi.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,11 @@ public class ConnectionFactoryConfiguration {
     if (properties.getPort() != null) builder.option(PORT, properties.getPort());
     if (properties.getUsername() != null) builder.option(USER, properties.getUsername());
     if (properties.getPassword() != null) builder.option(PASSWORD, properties.getPassword());
+    if (properties.getOptions() != null) {
+      properties.getOptions().forEach((key, value) ->
+        builder.option(Option.valueOf(key), value)
+      );
+    }
 
     return ConnectionFactories.get(builder.build());
   }

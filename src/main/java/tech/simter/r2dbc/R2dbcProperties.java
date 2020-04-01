@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceInitializationMode;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * See [DataSourceProperties]
@@ -24,6 +25,7 @@ public class R2dbcProperties {
   private DataSourceInitializationMode initializationMode;
   private List<String> schema;
   private List<String> data;
+  private Map<String, String> options;
 
   public String getProtocol() {
     return protocol;
@@ -113,6 +115,14 @@ public class R2dbcProperties {
     this.data = data;
   }
 
+  public Map<String, String> getOptions() {
+    return options;
+  }
+
+  public void setOptions(Map<String, String> options) {
+    this.options = options;
+  }
+
   @Override
   public String toString() {
     return "R2dbcProperties{" +
@@ -126,6 +136,7 @@ public class R2dbcProperties {
       ", url='" + url + "'" +
       ", initializationMode=" + initializationMode +
       ", schema=" + schema +
+      ", options=" + options +
       ", data=" + data +
       '}';
   }
