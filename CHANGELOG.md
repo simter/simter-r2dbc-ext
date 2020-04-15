@@ -1,5 +1,9 @@
 # simter-r2dbc-ext changelog
 
+## 1.4.0-M5 - 2020-04-15
+
+- Upgrade to simter-dependencies-1.3.0-M14
+
 ## 1.4.0-M4 - 2020-03-02
 
 - Release connection after execute initial sql [#1]
