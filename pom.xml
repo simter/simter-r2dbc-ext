@@ -12,6 +12,20 @@
   <packaging>jar</packaging>
   <name>simter-r2dbc-ext</name>
   <description>Simter R2DBC Extension</description>
+  <properties>
+    <db.platform>none</db.platform>
+    <db.host>localhost</db.host>
+    <db.port>~</db.port>
+    <db.name>testdb</db.name>
+    <db.username>tester</db.username>
+    <db.password>password</db.password>
+    <db.url>~</db.url>
+    <db.protocol>~</db.protocol>
+    <db.options>{}</db.options>
+    <db.driver-class>~</db.driver-class>
+    <db.init-mode>never</db.init-mode>
+    <db.continue-on-error>false</db.continue-on-error>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -39,7 +53,202 @@
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-r2dbc</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <configuration>
+          <delimiters>
+            <!-- make yml file support maven properties (by @...@)-->
+            <delimiter>@</delimiter>
+          </delimiters>
+          <useDefaultDelimiters>false</useDefaultDelimiters>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <profiles>
+    <profile>
+      <id>embedded-h2</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <db.platform>h2</db.platform>
+        <db.init-mode>always</db.init-mode>
+        <db.protocol>mem</db.protocol>
+        <!-- see https://github.com/r2dbc/r2dbc-h2/issues/19 -->
+        <db.options>{DB_CLOSE_DELAY: 10}</db.options>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>io.r2dbc</groupId>
+          <artifactId>r2dbc-h2</artifactId>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.h2database</groupId>
+          <artifactId>h2</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>embedded-postgres</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <properties>
+        <db.platform>postgres</db.platform>
+        <db.init-mode>always</db.init-mode>
+        <!-- default postgres port is 5432, plus 1 to avoid conflict -->
+        <db.port>5433</db.port>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>io.r2dbc</groupId>
+          <artifactId>r2dbc-postgresql</artifactId>
+          <scope>test</scope>
+        </dependency>
+
+        <!-- embedded postgres -->
+        <dependency>
+          <groupId>tech.simter</groupId>
+          <artifactId>simter-embedded-database-ext</artifactId>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>ru.yandex.qatools.embed</groupId>
+          <artifactId>postgresql-embedded</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>postgres</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <properties>
+        <db.platform>postgres</db.platform>
+        <db.init-mode>always</db.init-mode>
+        <db.port>5432</db.port>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>io.r2dbc</groupId>
+          <artifactId>r2dbc-postgresql</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>embedded-mysql</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <properties>
+        <db.platform>mysql</db.platform>
+        <db.init-mode>always</db.init-mode>
+        <!-- default mysql port is 3306, plus 1 to avoid conflict -->
+        <db.port>3307</db.port>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>dev.miku</groupId>
+          <artifactId>r2dbc-mysql</artifactId>
+          <scope>test</scope>
+        </dependency>
+
+        <!-- embedded mysql -->
+        <dependency>
+          <groupId>tech.simter</groupId>
+          <artifactId>simter-embedded-database-ext</artifactId>
+          <scope>runtime</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.wix</groupId>
+          <artifactId>wix-embedded-mysql</artifactId>
+          <scope>runtime</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>mysql</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <properties>
+        <db.platform>mysql</db.platform>
+        <db.init-mode>always</db.init-mode>
+        <db.port>3306</db.port>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>dev.miku</groupId>
+          <artifactId>r2dbc-mysql</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>mssql</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <properties>
+        <db.platform>mssql</db.platform>
+        <db.init-mode>always</db.init-mode>
+        <db.port>1433</db.port>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>io.r2dbc</groupId>
+          <artifactId>r2dbc-mssql</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
   <url>https://github.com/simter/simter-r2dbc-ext</url>
   <licenses>
     <license>
