@@ -1,6 +1,8 @@
 package tech.simter.r2dbc.kotlin
 
+import org.springframework.data.relational.core.query.Query
 import org.springframework.r2dbc.core.DatabaseClient.GenericExecuteSpec
+import java.util.*
 
 /**
  * Extension for mix [GenericExecuteSpec.bind] and [GenericExecuteSpec.bindNull]
@@ -22,3 +24,28 @@ inline fun <reified T> GenericExecuteSpec.bindNullable(
   name: String,
   value: Any?
 ): GenericExecuteSpec = value?.let { this.bind(name, it) } ?: this.bindNull(name, T::class.java)
+
+/**
+ * Extension for [Query]
+ * providing a convenient method to set limit with a [Optional] value.
+ *
+ * Usage:
+ *
+ * ```
+ * val limit: Optional<Int> = ...
+ * entityTemplate.select<X>()
+ *   .from(TABLE_X)
+ *   .matching(
+ *     query(criteria)
+ *       .offset(offset)
+ *       .limit(limit) // this line
+ *     )
+ *   )
+ * ```
+ *
+ * @author RJ
+ */
+fun Query.limit(limit: Optional<Int>): Query {
+  return if (limit.isPresent) this.limit(limit.get())
+  else this
+}
