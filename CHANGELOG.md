@@ -1,5 +1,13 @@
 # simter-r2dbc-ext changelog
 
+## 3.0.0-M1 - 2021-01-18
+
+- Upgrade to simter-dependencies-3.0.0-M1
+- Config maven to compile java and kotlin code
+- Convert unit test java code to kotlin code 
+- Add bindNullable extension method to `DatabaseClient.GenericExecuteSpec`
+- Add `Query.limit(Optional)` extension method
+
 ## 2.0.0 - 2020-11-19
 
 - Upgrade to simter-dependencies-2.0.0
