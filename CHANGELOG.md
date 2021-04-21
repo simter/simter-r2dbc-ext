@@ -1,5 +1,9 @@
 # simter-r2dbc-ext changelog
 
+## 3.0.0-M2 - 2021-04-21
+
+- Upgrade to simter-dependencies-3.0.0-M2
+
 ## 3.0.0-M1 - 2021-01-18
 
 - Upgrade to simter-dependencies-3.0.0-M1
