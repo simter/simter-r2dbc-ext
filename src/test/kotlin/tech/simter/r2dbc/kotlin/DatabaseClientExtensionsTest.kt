@@ -17,15 +17,16 @@ import tech.simter.r2dbc.UnitTestConfiguration
 class DatabaseClientExtensionsTest @Autowired constructor(private val databaseClient: DatabaseClient) {
   @BeforeAll
   fun setup() {
-    databaseClient.sql("""
+    databaseClient.sql("drop table if exists t")
+      .then()
+      .then(
+        databaseClient.sql("""
         create table t(
           id varchar(10) not null primary key,
           name varchar(10),
           remark varchar(10)
-        );""".trimIndent())
-      .fetch()
-      .rowsUpdated()
-      .block()
+        )""".trimIndent()).then()
+      ).block()
   }
 
   @Test
