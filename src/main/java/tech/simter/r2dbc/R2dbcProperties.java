@@ -11,7 +11,10 @@ import java.util.Map;
  * See ['50.5 @ConfigurationProperties'](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-kotlin.html#boot-features-kotlin-configuration-properties)
  *
  * @author RJ
+ * @deprecated since 3.0.0-M3 for removal in 3.0.0 in favor of use
+ * {@link org.springframework.boot.autoconfigure.r2dbc.R2dbcProperties}
  */
+@Deprecated
 @ConfigurationProperties(prefix = "spring.datasource")
 public class R2dbcProperties {
   private String protocol; // for h2: file|mem

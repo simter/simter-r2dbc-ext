@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,10 +21,16 @@ import static io.r2dbc.spi.ConnectionFactoryOptions.*;
  * <p>
  * Use <a href="https://r2dbc.io/spec/0.8.0.RELEASE/spec/html/#connections.factory.discovery">R2dbc ConnectionFactory Discovery Mechanism</a>.
  *
+ * @since 3.0.0-M3 default not active for prefer to use spring-boot default config unless set `simter.r2dbc.create-connection-factory-from-datasource-config=true`.
+ *
  * @author RJ
+ * @deprecated since 3.0.0-M3 for removal in 3.0.0 in favor of use spring-boot default r2dbc config way
  */
+@Deprecated
 @Configuration
 @ConditionalOnMissingBean(ConnectionFactory.class)
+@EnableConfigurationProperties(R2dbcProperties.class)
+@ConditionalOnProperty(name = "simter.r2dbc.create-connection-factory-from-datasource-config", havingValue ="true")
 public class ConnectionFactoryConfiguration {
   private final static Logger logger = LoggerFactory.getLogger(ConnectionFactoryConfiguration.class);
   private final R2dbcProperties properties;
