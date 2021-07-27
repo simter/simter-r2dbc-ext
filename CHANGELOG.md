@@ -1,5 +1,13 @@
 # simter-r2dbc-ext changelog
 
+## 3.0.0-M3 - 2021-07-27
+
+- Upgrade to simter-dependencies-3.0.0-M3 (spring-boot-2.5.3)
+- Deprecated to auto config `ConnectionFactory`
+    > Prefer to use spring r2dbc standard way.
+- Remove execute sql code in `R2dbcConfiguration`
+    > Use `spring.sql.init.schema-locations|data-locations` instead.
+
 ## 3.0.0-M2 - 2021-04-21
 
 - Upgrade to simter-dependencies-3.0.0-M2
