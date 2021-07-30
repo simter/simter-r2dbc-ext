@@ -36,7 +36,7 @@ logging:
     #reactor.Mono: INFO
     #reactor.Flux: INFO
 
-    # sql init
+    #---- spring r2dbc ----#
     #org.springframework.r2dbc.connection.init.ScriptUtils: DEBUG # DEBUG to show `Executing...[sql/h2/schema-drop.sql]`
     #org.springframework.r2dbc.core.DefaultDatabaseClient: DEBUG # TRACE to show sql
     #org.springframework.r2dbc.connection.R2dbcTransactionManager: DEBUG # DEBUG to show transaction
