@@ -1,5 +1,9 @@
 # simter-r2dbc-ext changelog
 
+## 3.0.0 - 2022-06-21
+
+- Upgrade to simter-dependencies-3.0.0 (jdk-17)
+
 ## 3.0.0-M3 - 2021-07-27
 
 - Upgrade to simter-dependencies-3.0.0-M3 (spring-boot-2.5.3)
