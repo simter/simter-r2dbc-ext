@@ -49,3 +49,21 @@ fun Query.limit(limit: Optional<Int>): Query {
   return if (limit.isPresent) this.limit(limit.get())
   else this
 }
+
+/**
+ * Extension for [GenericExecuteSpec] to bind multiple not null values.
+ */
+fun GenericExecuteSpec.bind(nameValues: Map<String, Any>): GenericExecuteSpec {
+  var spec = this
+  nameValues.forEach { spec = spec.bind(it.key, it.value) }
+  return spec
+}
+
+/**
+ * Extension for [GenericExecuteSpec] to bind multiple null values.
+ */
+fun GenericExecuteSpec.bindNull(nameTypes: Map<String, Class<*>>): GenericExecuteSpec {
+  var spec = this
+  nameTypes.forEach { spec = spec.bindNull(it.key, it.value) }
+  return spec
+}
