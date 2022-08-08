@@ -85,9 +85,9 @@ fun GenericExecuteSpec.bindNull(nameTypes: Map<String, Class<*>>): GenericExecut
  * @param includeNullValue whether to insert with null value property, default is false
  * @param excludeNames all the property name to exclude, default is empty list
  * @param nameConverter the lambda for convert the property name to the table column name,
- *        default convert the property name to underscore name and use it as column name
+ *        default convert the property name to underscore name and use it as the column name
  * @param valueConverter the lambda for convert the property value to the table column value,
- *        default use the property value as column value
+ *        default use the property value as the column value
  */
 inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   table: String,
@@ -99,12 +99,11 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   valueConverter: (name: String, value: Any) -> Any = { _, value -> value }
 ): Mono<I> {
   // 1. collect property name-value-type
-  val nameValueTypes: List<Triple<String, Any?, KClass<*>>> = T::class.memberProperties
-    .filter {
-      it.visibility == KVisibility.PUBLIC                 // only public properties
-        && !excludeNames.contains(it.name)                // exclude specific property
-        && if (it.name == "id") !autoGenerateId else true // exclude id property
-    }.map { Triple(it.name, it.get(entity), it.returnType.classifier as KClass<*>) }
+  val nameValueTypes: List<Triple<String, Any?, KClass<*>>> = T::class.memberProperties.filter {
+    it.visibility == KVisibility.PUBLIC                 // only public properties
+      && !excludeNames.contains(it.name)                // exclude specific property
+      && if (it.name == "id") !autoGenerateId else true // exclude id property
+  }.map { Triple(it.name, it.get(entity), it.returnType.classifier as KClass<*>) }
     .filterNot { !includeNullValue && it.second == null } // exclude null value property
 
   // 2. generate the insert SQL from entity properties
@@ -121,9 +120,8 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   nameValueTypes
     // bind value with name as sql param marker
     .forEach { p ->
-      spec =
-        if (p.second != null) spec.bind(p.first, valueConverter(p.first, p.second!!)) // bind not null value
-        else spec.bindNull(p.first, p.third.javaObjectType)                           // bind null value
+      spec = if (p.second != null) spec.bind(p.first, valueConverter(p.first, p.second!!)) // bind not null value
+      else spec.bindNull(p.first, p.third.javaObjectType)                           // bind null value
     }
 
   // 4. execute and return id
