@@ -61,7 +61,7 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
   @Test
   fun `custom id`() {
     // insert
-    var id = 100
+    val id = 100
     val theName = randomString(6)
     databaseClient.insert(
       table = "sample2",
@@ -108,19 +108,14 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
   }
 
   @Test
-  fun `with name converter`() {
+  fun `with name mapper`() {
     // insert
     var id = 0
     val createBy = randomString(6)
     databaseClient.insert(
       table = "sample2",
       entity = Sample2(ts = LocalDate.now(), createBy = createBy),
-      nameConverter = {
-        when (it) {
-          "createBy" -> "creator"
-          else -> it
-        }
-      }
+      nameMapper = mapOf("createBy" to "creator")
     ).test()
       .assertNext {
         id = it
@@ -139,7 +134,7 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
   }
 
   @Test
-  fun `with name converter and include null value`() {
+  fun `with name mapper and include null value`() {
     // insert
     var id = 0
     val createBy = randomString(6)
@@ -147,12 +142,7 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
       table = "sample2",
       entity = Sample2(ts = LocalDate.now(), createBy = createBy),
       includeNullValue = true,
-      nameConverter = {
-        when (it) {
-          "createBy" -> "creator"
-          else -> it
-        }
-      }
+      nameMapper = mapOf("createBy" to "creator")
     ).test()
       .assertNext {
         id = it
@@ -171,19 +161,14 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
   }
 
   @Test
-  fun `with value converter`() {
+  fun `with value mapper`() {
     // insert
     var id = 0
     val theName = randomString(6)
     databaseClient.insert(
       table = "sample2",
       entity = Sample2(ts = LocalDate.now(), theName = theName),
-      valueConverter = { name, value ->
-        when (name) {
-          "theName" -> "${value as String}-more"
-          else -> value
-        }
-      }
+      valueMapper = mapOf("theName" to { value -> "$value-more" })
     ).test()
       .assertNext {
         id = it

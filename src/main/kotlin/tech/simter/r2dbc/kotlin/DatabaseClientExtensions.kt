@@ -86,10 +86,10 @@ fun GenericExecuteSpec.bindNull(nameTypes: Map<String, Class<*>>): GenericExecut
  * @param autoGenerateId whether the insertion use the auto-generate-id strategy, default is true
  * @param includeNullValue whether to insert with null value property, default is false
  * @param excludeNames all the property name to exclude, default is empty list
- * @param nameConverter the lambda for convert the property name to the table column name,
- *        default convert the property name to underscore name and use it as the column name
- * @param valueConverter the lambda for convert the property value to the table column value,
- *        default use the property value as the column value
+ * @param nameMapper the specific mapper for convert the property-name to the table-column-name,
+ *        default use the underscore state of the property-name as the table-column-name
+ * @param valueMapper the specific mapper for convert the property-value to the table-column-value,
+ *        default use the property-value as the table-column-value
  */
 inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   table: String,
@@ -97,8 +97,8 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   autoGenerateId: Boolean = true,
   includeNullValue: Boolean = false,
   excludeNames: List<String> = emptyList(),
-  noinline nameConverter: (name: String) -> String = { name -> name },
-  valueConverter: (name: String, value: Any) -> Any = { _, value -> value }
+  nameMapper: Map<String, String> = emptyMap(),
+  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap()
 ): Mono<I> {
   // 1. collect property name-value-type
   val nameValueTypes: List<Triple<String, Any?, KClass<*>>> = T::class.memberProperties.filter {
@@ -112,7 +112,7 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   val nameValues = nameValueTypes.map { it.first to it.second }
   val sql = """
     insert into $table (
-      ${nameValues.joinToString(", ") { underscore(nameConverter(it.first)) }}
+      ${nameValues.joinToString(", ") { if (nameMapper.contains(it.first)) nameMapper[it.first]!! else underscore(it.first) }}
     ) values (
       ${nameValues.joinToString(", ") { ":${it.first}" }}
     )""".trimIndent()
@@ -120,10 +120,11 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   // 3. bing entity property value
   var spec = this.sql(sql)
   nameValueTypes
-    // bind value with name as sql param marker
+    // bind value with property-name as sql-param-marker
     .forEach { p ->
-      spec = if (p.second != null) spec.bind(p.first, valueConverter(p.first, p.second!!)) // bind not null value
-      else spec.bindNull(p.first, p.third.javaObjectType)                           // bind null value
+      val value = if (valueMapper.contains(p.first)) valueMapper[p.first]!!.invoke(p.second) else p.second
+      spec = if (value != null) spec.bind(p.first, value) // bind not null value
+      else spec.bindNull(p.first, p.third.javaObjectType) // bind null value
     }
 
   // 4. execute and return id
@@ -139,9 +140,9 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
  * @param sql the query sql
  * @param params the param with not null value to bind, default is empty
  * @param excludeNames all the column name to exclude, default is empty list
- * @param nameMapper the specific constructor-param-name to the table-column-name pair,
+ * @param nameMapper the specific mapper for convert the constructor-param-name to the table-column-name,
  *        default use the underscore and uppercase state of the constructor-param-name as the table-column-name
- * @param valueMapper the specific converter for convert table-column-value to the constructor-param-value pair,
+ * @param valueMapper the specific mapper for convert the table-column-value to the constructor-param-value,
  *        default use the table-column-value as the constructor-param-value
  */
 inline fun <reified T : Any> DatabaseClient.select(
