@@ -39,8 +39,8 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
     var id = 0
     val theName = randomString(6)
     databaseClient.insert(
-      table = "sample",
-      entity = Sample(ts = LocalDate.now(), theName = theName)
+      table = "sample2",
+      entity = Sample2(ts = LocalDate.now(), theName = theName)
     ).test()
       .assertNext {
         id = it
@@ -49,7 +49,7 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
       .verifyComplete()
 
     // verify
-    databaseClient.sql("select the_name from sample where id = :id")
+    databaseClient.sql("select the_name from sample2 where id = :id")
       .bind("id", id)
       .map { row: Row -> row.get("the_name") as String }
       .one()
@@ -64,15 +64,15 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
     var id = 100
     val theName = randomString(6)
     databaseClient.insert(
-      table = "sample",
-      entity = Sample(id = id, ts = LocalDate.now(), theName = theName),
+      table = "sample2",
+      entity = Sample2(id = id, ts = LocalDate.now(), theName = theName),
       autoGenerateId = false
     ).test()
       .assertNext { assertThat(it).isEqualTo(id) }
       .verifyComplete()
 
     // verify
-    databaseClient.sql("select the_name from sample where id = :id")
+    databaseClient.sql("select the_name from sample2 where id = :id")
       .bind("id", id)
       .map { row: Row -> row.get("the_name") as String }
       .one()
@@ -87,8 +87,8 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
     var id = 0
     val theName = randomString(6)
     databaseClient.insert(
-      table = "sample",
-      entity = Sample(ts = LocalDate.now(), theName = theName),
+      table = "sample2",
+      entity = Sample2(ts = LocalDate.now(), theName = theName),
       excludeNames = listOf("name")
     ).test()
       .assertNext {
@@ -98,7 +98,7 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
       .verifyComplete()
 
     // verify
-    databaseClient.sql("select the_name from sample where id = :id")
+    databaseClient.sql("select the_name from sample2 where id = :id")
       .bind("id", id)
       .map { row: Row -> row.get("the_name") as String }
       .one()
@@ -113,8 +113,8 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
     var id = 0
     val createBy = randomString(6)
     databaseClient.insert(
-      table = "sample",
-      entity = Sample(ts = LocalDate.now(), createBy = createBy),
+      table = "sample2",
+      entity = Sample2(ts = LocalDate.now(), createBy = createBy),
       nameConverter = {
         when (it) {
           "createBy" -> "creator"
@@ -129,7 +129,7 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
       .verifyComplete()
 
     // verify
-    databaseClient.sql("select creator from sample where id = :id")
+    databaseClient.sql("select creator from sample2 where id = :id")
       .bind("id", id)
       .map { row: Row -> row.get("creator") as String }
       .one()
@@ -144,8 +144,8 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
     var id = 0
     val createBy = randomString(6)
     databaseClient.insert(
-      table = "sample",
-      entity = Sample(ts = LocalDate.now(), createBy = createBy),
+      table = "sample2",
+      entity = Sample2(ts = LocalDate.now(), createBy = createBy),
       includeNullValue = true,
       nameConverter = {
         when (it) {
@@ -161,7 +161,7 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
       .verifyComplete()
 
     // verify
-    databaseClient.sql("select creator from sample where id = :id")
+    databaseClient.sql("select creator from sample2 where id = :id")
       .bind("id", id)
       .map { row: Row -> row.get("creator") as String }
       .one()
@@ -176,8 +176,8 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
     var id = 0
     val theName = randomString(6)
     databaseClient.insert(
-      table = "sample",
-      entity = Sample(ts = LocalDate.now(), theName = theName),
+      table = "sample2",
+      entity = Sample2(ts = LocalDate.now(), theName = theName),
       valueConverter = { name, value ->
         when (name) {
           "theName" -> "${value as String}-more"
@@ -192,7 +192,7 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
       .verifyComplete()
 
     // verify
-    databaseClient.sql("select the_name from sample where id = :id")
+    databaseClient.sql("select the_name from sample2 where id = :id")
       .bind("id", id)
       .map { row: Row -> row.get("the_name") as String }
       .one()

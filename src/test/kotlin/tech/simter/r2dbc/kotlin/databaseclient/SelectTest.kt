@@ -35,15 +35,15 @@ class SelectTest @Autowired constructor(private val databaseClient: DatabaseClie
   @Test
   fun `bind value`() {
     // init data
-    val source = Sample(id = 1, ts = LocalDate.now(), theName = randomString(6))
+    val source = Sample2(id = 1, ts = LocalDate.now(), theName = randomString(6))
     insertOne(databaseClient, source)
       .test()
       .expectNext(source)
       .verifyComplete()
 
     // select
-    databaseClient.select<Sample>(
-      sql = "select id, ts, the_name from sample where id = :id",
+    databaseClient.select<Sample2>(
+      sql = "select id, ts, the_name from sample2 where id = :id",
       params = mapOf("id" to source.id)
     ).test()
       .expectNext(source)
@@ -53,35 +53,35 @@ class SelectTest @Autowired constructor(private val databaseClient: DatabaseClie
   @Test
   fun `with name exclude`() {
     // init data
-    val source = Sample(id = 1, ts = LocalDate.now(), theName = randomString(6))
+    val source = Sample2(id = 1, ts = LocalDate.now(), theName = randomString(6))
     insertOne(databaseClient, source)
       .test()
       .expectNext(source)
       .verifyComplete()
 
     // select
-    databaseClient.select<Sample>(
-      sql = "select id, ts, the_name, creator from sample where id = :id",
+    databaseClient.select<Sample2>(
+      sql = "select id, ts, the_name, creator from sample2 where id = :id",
       params = mapOf("id" to source.id),
       // these make theName and createBy has the default value
       excludeNames = listOf("theName", "createBy")
     ).test()
-      .expectNext(Sample(id = source.id, ts = source.ts))
+      .expectNext(Sample2(id = source.id, ts = source.ts))
       .verifyComplete()
   }
 
   @Test
   fun `with name mapper`() {
     // init data
-    val source = Sample(id = 1, ts = LocalDate.now(), theName = randomString(6))
+    val source = Sample2(id = 1, ts = LocalDate.now(), theName = randomString(6))
     insertOne(databaseClient, source)
       .test()
       .expectNext(source)
       .verifyComplete()
 
     // select
-    databaseClient.select<Sample>(
-      sql = "select id, ts, the_name, creator from sample where id = :id",
+    databaseClient.select<Sample2>(
+      sql = "select id, ts, the_name, creator from sample2 where id = :id",
       params = mapOf("id" to source.id),
       nameMapper = mapOf("createBy" to "creator")
     ).test()
@@ -92,15 +92,15 @@ class SelectTest @Autowired constructor(private val databaseClient: DatabaseClie
   @Test
   fun `with value mapper`() {
     // init data
-    val source = Sample(id = 1, ts = LocalDate.now(), theName = randomString(6))
+    val source = Sample2(id = 1, ts = LocalDate.now(), theName = randomString(6))
     insertOne(databaseClient, source)
       .test()
       .expectNext(source)
       .verifyComplete()
 
     // select (the creator column value would be ignored because no matcher nameMapper)
-    databaseClient.select<Sample>(
-      sql = "select id, ts, the_name, creator from sample where id = :id",
+    databaseClient.select<Sample2>(
+      sql = "select id, ts, the_name, creator from sample2 where id = :id",
       params = mapOf("id" to source.id),
       valueMapper = mapOf("theName" to { value -> "$value-more" })
     ).test()

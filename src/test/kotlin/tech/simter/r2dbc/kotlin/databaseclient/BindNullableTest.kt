@@ -34,7 +34,7 @@ class BindNullableTest @Autowired constructor(private val databaseClient: Databa
   fun test() {
     // null param
     databaseClient
-      .sql("insert into sample(ts, the_name) values (:ts, :theName)")
+      .sql("insert into sample2(ts, the_name) values (:ts, :theName)")
       .bind("ts", LocalDate.now())
       .bindNullable<String>("theName", null)
       .fetch()
@@ -45,7 +45,7 @@ class BindNullableTest @Autowired constructor(private val databaseClient: Databa
 
     // not null param
     databaseClient
-      .sql("insert into sample(ts, the_name) values (:ts, :theName)")
+      .sql("insert into sample2(ts, the_name) values (:ts, :theName)")
       .bind("ts", LocalDate.now())
       .bindNullable<String>("theName", "test")
       .fetch()

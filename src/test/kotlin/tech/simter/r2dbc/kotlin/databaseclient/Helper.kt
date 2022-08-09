@@ -6,12 +6,12 @@ import reactor.core.publisher.Mono
 
 object Helper {
   fun initTable(databaseClient: DatabaseClient): Mono<Void> {
-    return databaseClient.sql("drop table if exists sample")
+    return databaseClient.sql("drop table if exists sample2")
       .then()
       .then(
         databaseClient.sql(
           """
-        create table sample(
+        create table sample2(
           id serial primary key,
           ts date not null,
           the_name varchar(255),
@@ -22,13 +22,13 @@ object Helper {
   }
 
   fun clean(databaseClient: DatabaseClient): Mono<Void> {
-    return databaseClient.sql("delete from sample").then()
+    return databaseClient.sql("delete from sample2").then()
   }
 
-  fun insertOne(databaseClient: DatabaseClient, sample: Sample): Mono<Sample> {
+  fun insertOne(databaseClient: DatabaseClient, sample: Sample2): Mono<Sample2> {
     val hasId = sample.id > 0
     var spec = databaseClient
-      .sql("insert into sample(${if (hasId) "id, " else ""}ts, the_name, creator) values (${if (hasId) ":id, " else ""}:ts, :theName, :creator)")
+      .sql("insert into sample2(${if (hasId) "id, " else ""}ts, the_name, creator) values (${if (hasId) ":id, " else ""}:ts, :theName, :creator)")
       .bind("ts", sample.ts)
 
     // id
