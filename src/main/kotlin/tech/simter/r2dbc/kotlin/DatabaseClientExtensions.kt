@@ -29,8 +29,7 @@ import kotlin.reflect.full.memberProperties
  * @author RJ
  */
 inline fun <reified T> GenericExecuteSpec.bindNullable(
-  name: String,
-  value: Any?
+  name: String, value: Any?
 ): GenericExecuteSpec = value?.let { this.bind(name, it) } ?: this.bindNull(name, T::class.java)
 
 /**
