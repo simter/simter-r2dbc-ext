@@ -34,10 +34,10 @@ class BindMultipleParamsTest @Autowired constructor(private val databaseClient: 
   @Test
   fun `bind not null params`() {
     databaseClient
-      .sql("insert into sample(ts, theName) values (:ts, :theName)")
+      .sql("insert into sample(ts, the_name) values (:ts, :theName)")
       .bind(
         mapOf<String, Any>(
-          "name" to "test",
+          "theName" to "test",
           "ts" to LocalDate.now()
         )
       )
@@ -51,11 +51,11 @@ class BindMultipleParamsTest @Autowired constructor(private val databaseClient: 
   @Test
   fun `bind null params`() {
     databaseClient
-      .sql("insert into sample(ts, theName) values (:ts, :theName)")
+      .sql("insert into sample(ts, the_name) values (:ts, :theName)")
       .bind("ts", LocalDate.now())
       .bindNull(
         mapOf<String, Class<*>>(
-          "name" to String::class.java
+          "theName" to String::class.java
         )
       )
       .fetch()
