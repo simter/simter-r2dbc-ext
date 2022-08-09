@@ -3,8 +3,6 @@ package tech.simter.r2dbc.kotlin.databaseclient
 import io.r2dbc.spi.Row
 import org.springframework.r2dbc.core.DatabaseClient
 import reactor.core.publisher.Mono
-import tech.simter.util.RandomUtils.randomString
-import java.time.LocalDate
 
 object Helper {
   fun initTable(databaseClient: DatabaseClient): Mono<Void> {
@@ -27,13 +25,27 @@ object Helper {
     return databaseClient.sql("delete from sample").then()
   }
 
-  fun insertOne(databaseClient: DatabaseClient): Mono<Int> {
-    return databaseClient
-      .sql("insert into sample(ts, name) values (:ts, :name)")
-      .bind("ts", LocalDate.now())
-      .bind("name", randomString(4))
+  fun insertOne(databaseClient: DatabaseClient, sample: Sample): Mono<Sample> {
+    val hasId = sample.id > 0
+    var spec = databaseClient
+      .sql("insert into sample(${if (hasId) "id, " else ""}ts, the_name, creator) values (${if (hasId) ":id, " else ""}:ts, :theName, :creator)")
+      .bind("ts", sample.ts)
+
+    // id
+    if (hasId) spec = spec.bind("id", sample.id)
+
+    // theName
+    spec = if (sample.theName == null) spec.bindNull("theName", String::class.java)
+    else spec.bind("theName", sample.theName)
+
+    // creator
+    spec = if (sample.createBy == null) spec.bindNull("creator", String::class.java)
+    else spec.bind("creator", sample.createBy)
+
+    return if (hasId) spec.then().thenReturn(sample)
+    else spec
       .filter { s -> s.returnGeneratedValues("id") }
-      .map { row: Row -> row.get("id") as Int } // get auto generated id
+      .map { row: Row -> sample.copy(id = row.get("id") as Int) } // get auto generated id
       .one()
   }
 }
