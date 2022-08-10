@@ -14,6 +14,7 @@ object Helper {
         create table sample2(
           id serial primary key,
           ts date not null,
+          status varchar(255),
           the_name varchar(255),
           creator varchar(255)
         )""".trimIndent()
@@ -28,11 +29,14 @@ object Helper {
   fun insertOne(databaseClient: DatabaseClient, sample: Sample2): Mono<Sample2> {
     val hasId = sample.id > 0
     var spec = databaseClient
-      .sql("insert into sample2(${if (hasId) "id, " else ""}ts, the_name, creator) values (${if (hasId) ":id, " else ""}:ts, :theName, :creator)")
+      .sql("insert into sample2(${if (hasId) "id, " else ""}ts, status, the_name, creator) values (${if (hasId) ":id, " else ""}:ts, :status, :theName, :creator)")
       .bind("ts", sample.ts)
 
     // id
     if (hasId) spec = spec.bind("id", sample.id)
+
+    // status
+    spec = spec.bind("status", sample.status.name)
 
     // theName
     spec = if (sample.theName == null) spec.bindNull("theName", String::class.java)

@@ -179,8 +179,8 @@ inline fun <reified T : Any> DatabaseClient.select(
       parameters.forEach {
         if (row.metadata.contains(it.value)) {
           //println("paramName=${it.key.name}, columnName=${it.value}, columnType=${(it.key.type.classifier as KClass<*>).javaObjectType.name}")
-          val value = row.get(it.value, (it.key.type.classifier as KClass<*>).javaObjectType)
-          args[it.key] = if (valueMapper.contains(it.key.name)) valueMapper[it.key.name]!!.invoke(value) else value
+          args[it.key] = if (valueMapper.contains(it.key.name)) valueMapper[it.key.name]!!.invoke(row.get(it.value))
+          else row.get(it.value, (it.key.type.classifier as KClass<*>).javaObjectType)
         }
       }
 

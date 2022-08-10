@@ -14,6 +14,7 @@ import tech.simter.r2dbc.UnitTestConfiguration
 import tech.simter.r2dbc.kotlin.databaseclient.Helper.clean
 import tech.simter.r2dbc.kotlin.databaseclient.Helper.initTable
 import tech.simter.r2dbc.kotlin.databaseclient.Helper.insertOne
+import tech.simter.r2dbc.kotlin.databaseclient.Sample2.Companion.DB_2_STATUS_VALUE
 import tech.simter.r2dbc.kotlin.select
 import tech.simter.util.RandomUtils.randomString
 import java.time.LocalDate
@@ -44,7 +45,7 @@ class SelectTest @Autowired constructor(private val databaseClient: DatabaseClie
     // select
     databaseClient.select<Sample2>(
       sql = "select id, ts, the_name from sample2 where id = :id",
-      params = mapOf("id" to source.id)
+      params = mapOf("id" to source.id),
     ).test()
       .expectNext(source)
       .verifyComplete()
@@ -64,7 +65,7 @@ class SelectTest @Autowired constructor(private val databaseClient: DatabaseClie
       sql = "select id, ts, the_name, creator from sample2 where id = :id",
       params = mapOf("id" to source.id),
       // these make theName and createBy has the default value
-      excludeNames = listOf("theName", "createBy")
+      excludeNames = listOf("theName", "createBy"),
     ).test()
       .expectNext(Sample2(id = source.id, ts = source.ts))
       .verifyComplete()
@@ -83,7 +84,7 @@ class SelectTest @Autowired constructor(private val databaseClient: DatabaseClie
     databaseClient.select<Sample2>(
       sql = "select id, ts, the_name, creator from sample2 where id = :id",
       params = mapOf("id" to source.id),
-      nameMapper = mapOf("createBy" to "creator")
+      nameMapper = mapOf("createBy" to "creator"),
     ).test()
       .expectNext(source)
       .verifyComplete()
@@ -100,9 +101,9 @@ class SelectTest @Autowired constructor(private val databaseClient: DatabaseClie
 
     // select (the creator column value would be ignored because no matcher nameMapper)
     databaseClient.select<Sample2>(
-      sql = "select id, ts, the_name, creator from sample2 where id = :id",
+      sql = "select id, ts, status, the_name, creator from sample2 where id = :id",
       params = mapOf("id" to source.id),
-      valueMapper = mapOf("theName" to { value -> "$value-more" })
+      valueMapper = mapOf("theName" to { value -> "$value-more" }, DB_2_STATUS_VALUE),
     ).test()
       .expectNext(source.copy(theName = "${source.theName}-more"))
       .verifyComplete()

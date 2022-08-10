@@ -15,6 +15,7 @@ import reactor.kotlin.test.test
 import tech.simter.r2dbc.UnitTestConfiguration
 import tech.simter.r2dbc.kotlin.databaseclient.Helper.clean
 import tech.simter.r2dbc.kotlin.databaseclient.Helper.initTable
+import tech.simter.r2dbc.kotlin.databaseclient.Sample2.Companion.STATUS_2_DB_VALUE
 import tech.simter.r2dbc.kotlin.insert
 import tech.simter.util.RandomUtils.randomString
 import java.time.LocalDate
@@ -40,7 +41,8 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
     val theName = randomString(6)
     databaseClient.insert(
       table = "sample2",
-      entity = Sample2(ts = LocalDate.now(), theName = theName)
+      entity = Sample2(ts = LocalDate.now(), theName = theName),
+      excludeNames = listOf("status"),
     ).test()
       .assertNext {
         id = it
@@ -66,7 +68,8 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
     databaseClient.insert(
       table = "sample2",
       entity = Sample2(id = id, ts = LocalDate.now(), theName = theName),
-      autoGenerateId = false
+      autoGenerateId = false,
+      excludeNames = listOf("status"),
     ).test()
       .assertNext { assertThat(it).isEqualTo(id) }
       .verifyComplete()
@@ -89,7 +92,7 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
     databaseClient.insert(
       table = "sample2",
       entity = Sample2(ts = LocalDate.now(), theName = theName),
-      excludeNames = listOf("name")
+      excludeNames = listOf("name", "status"),
     ).test()
       .assertNext {
         id = it
@@ -115,7 +118,8 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
     databaseClient.insert(
       table = "sample2",
       entity = Sample2(ts = LocalDate.now(), createBy = createBy),
-      nameMapper = mapOf("createBy" to "creator")
+      nameMapper = mapOf("createBy" to "creator"),
+      excludeNames = listOf("status"),
     ).test()
       .assertNext {
         id = it
@@ -142,7 +146,8 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
       table = "sample2",
       entity = Sample2(ts = LocalDate.now(), createBy = createBy),
       includeNullValue = true,
-      nameMapper = mapOf("createBy" to "creator")
+      nameMapper = mapOf("createBy" to "creator"),
+      excludeNames = listOf("status"),
     ).test()
       .assertNext {
         id = it
@@ -168,7 +173,10 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
     databaseClient.insert(
       table = "sample2",
       entity = Sample2(ts = LocalDate.now(), theName = theName),
-      valueMapper = mapOf("theName" to { value -> "$value-more" })
+      valueMapper = mapOf(
+        "theName" to { value -> "$value-more" },
+        STATUS_2_DB_VALUE,
+      ),
     ).test()
       .assertNext {
         id = it

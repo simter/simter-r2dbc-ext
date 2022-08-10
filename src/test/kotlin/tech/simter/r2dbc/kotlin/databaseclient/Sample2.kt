@@ -8,4 +8,14 @@ data class Sample2(
   val ts: LocalDate,
   val theName: String? = null,
   val createBy: String? = null,
-) : Id<Int>
+  val status: Status = Status.Second,
+) : Id<Int> {
+  enum class Status {
+    First, Second
+  }
+
+  companion object {
+    val STATUS_2_DB_VALUE: Pair<String, (value: Any?) -> Any?> = "status" to { (it as Status).name }
+    val DB_2_STATUS_VALUE: Pair<String, (value: Any?) -> Any?> = "status" to { Status.valueOf(it as String) }
+  }
+}
