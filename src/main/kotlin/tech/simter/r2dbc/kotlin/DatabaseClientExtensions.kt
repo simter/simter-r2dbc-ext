@@ -232,3 +232,48 @@ inline fun <reified T : Any> DatabaseClient.selectFirstColumn(
     .map { row -> valueMapper?.apply(row.get(0)) ?: row.get(0, T::class.javaObjectType) }
     .all() as Flux<T>
 }
+
+/**
+ * Extension for [DatabaseClient] to select sql to entity.
+ *
+ * @param table the table name
+ * @param sets the column-value pairs to set. Return [IllegalArgumentException] if it is empty
+ * @param whereSql the sql part after the set sql ('update $table set ...'), default is empty
+ * @param whereParams the param with not null value to bind for [whereSql], default is empty
+ * @param nameMapper the specific mapper for convert the key in [sets] to the table-column-name,
+ *        default use the underscore state of the key in [sets] as the table-column-name
+ * @param valueMapper the specific mapper for convert the value in [sets] to the table-column-value,
+ *        default use the value in [sets] as the table-column-value
+ * @param nullValueTypes the param-value type when the value is null, the key is the param name, default is empty
+ */
+fun DatabaseClient.update(
+  table: String,
+  sets: Map<String, Any?>,
+  whereSql: String = "",
+  whereParams: Map<String, Any> = emptyMap(),
+  nameMapper: Map<String, String> = emptyMap(),
+  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap(),
+  nullValueTypes: Map<String, Class<*>> = emptyMap(),
+): Mono<Int> {
+  // safe check
+  if (sets.isEmpty()) return Mono.error(IllegalArgumentException("Param 'sets' could not be empty"))
+
+  // create sql
+  val sql = """
+    update $table
+      set ${sets.keys.joinToString(", ") { "${underscore(nameMapper.getOrDefault(it, it))} = :$it" }}
+      $whereSql
+    """.trimIndent()
+
+  // do update
+  val bindParams: Map<String, Any?> = (sets + whereParams)
+    .mapValues { if (valueMapper.contains(it.key)) valueMapper[it.key]!!.invoke(it.value) else it.value }
+  @Suppress("UNCHECKED_CAST")
+  return this.sql(sql)
+    .bind(bindParams.filterNot { it.value == null } as Map<String, Any>)
+    .bindNull(bindParams.filter { it.value == null }.mapValues {
+      nullValueTypes[it.key]
+        ?: error("Param '${it.key}' has a null mapped value but missing type config, can use 'nullValueTypes' to config it")
+    })
+    .fetch().rowsUpdated()
+}
