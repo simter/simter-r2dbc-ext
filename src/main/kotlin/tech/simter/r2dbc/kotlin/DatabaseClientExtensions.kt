@@ -277,3 +277,20 @@ fun DatabaseClient.update(
     })
     .fetch().rowsUpdated()
 }
+
+/**
+ * Extension for [DatabaseClient] to judge whether the sql execution return any value.
+ *
+ * @param sql the query sql
+ * @param params the param with not null value to bind, default is empty
+ */
+fun DatabaseClient.exists(
+  sql: String,
+  params: Map<String, Any> = emptyMap(),
+): Mono<Boolean> {
+  return this.sql(sql)
+    .bind(params)
+    .fetch()
+    .first()
+    .hasElement()
+}
