@@ -6,6 +6,7 @@ import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.r2dbc.core.DatabaseClient.GenericExecuteSpec
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import tech.simter.kotlin.data.Id
 import tech.simter.util.StringUtils.underscore
 import java.util.*
@@ -187,4 +188,25 @@ inline fun <reified T : Any> DatabaseClient.select(
       // call constructor to create an entity instance
       constructor.callBy(args)
     }.all()
+}
+
+/**
+ * Only emit the first element from [DatabaseClient.select].
+ *
+ * All params are the same with [DatabaseClient.select].
+ */
+inline fun <reified T : Any> DatabaseClient.selectFirstRow(
+  sql: String,
+  params: Map<String, Any> = emptyMap(),
+  excludeNames: List<String> = emptyList(),
+  nameMapper: Map<String, String> = emptyMap(),
+  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap()
+): Mono<T> {
+  return this.select<T>(
+    sql = sql,
+    params = params,
+    excludeNames = excludeNames,
+    nameMapper = nameMapper,
+    valueMapper = valueMapper,
+  ).toMono()
 }

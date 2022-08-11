@@ -46,6 +46,10 @@
       <artifactId>kotlin-reflect</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.projectreactor.kotlin</groupId>
+      <artifactId>reactor-kotlin-extensions</artifactId>
+    </dependency>
 
     <!-- r2dbc -->
     <dependency>
@@ -72,11 +76,6 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.projectreactor.kotlin</groupId>
-      <artifactId>reactor-kotlin-extensions</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
