@@ -4,7 +4,7 @@
   <parent>
     <groupId>tech.simter</groupId>
     <artifactId>simter-dependencies</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
     <relativePath/>
   </parent>
   <artifactId>simter-r2dbc-ext</artifactId>
