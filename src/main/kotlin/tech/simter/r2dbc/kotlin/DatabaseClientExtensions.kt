@@ -10,6 +10,7 @@ import reactor.kotlin.core.publisher.toMono
 import tech.simter.kotlin.data.Id
 import tech.simter.util.StringUtils.underscore
 import java.util.*
+import java.util.function.Function
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.KVisibility
@@ -209,4 +210,25 @@ inline fun <reified T : Any> DatabaseClient.selectFirstRow(
     nameMapper = nameMapper,
     valueMapper = valueMapper,
   ).toMono()
+}
+
+/**
+ * Extension for [DatabaseClient] to select a single column value to the specific type [T].
+ *
+ * > Note: Could not directly return null value.
+ * > If you need null value return, need to use the [valueMapper] warp it to an empty [Optional] value.
+ *
+ * @param sql the query sql
+ * @param params the param with not null value to bind, default is empty
+ * @param valueMapper the specific mapper for convert the table-column-value to the return-value,
+ *        default use the table-column-value as the return-value
+ */
+inline fun <reified T : Any> DatabaseClient.selectFirstColumn(
+  sql: String,
+  params: Map<String, Any> = emptyMap(),
+  valueMapper: Function<Any?, T>? = null
+): Flux<T> {
+  return this.sql(sql).bind(params)
+    .map { row -> valueMapper?.apply(row.get(0)) ?: row.get(0, T::class.javaObjectType) }
+    .all() as Flux<T>
 }
