@@ -33,7 +33,7 @@ class SampleServiceTransactionTest @Autowired constructor(
   }
 
   @Test
-  fun failedByUniqueWithTransaction() {
+  fun `failed by unique with transaction`() {
     // insert failed by transaction rollback
     service.insertFailedByUniqueWithTransaction()
       .test()
@@ -50,7 +50,7 @@ class SampleServiceTransactionTest @Autowired constructor(
    */
   @Disabled
   @Test
-  fun failedByReadonlyTransaction() {
+  fun `failed by readonly transaction`() {
     service.insertFailedByReadonlyTransaction()
       .test()
       .expectError()
@@ -58,7 +58,7 @@ class SampleServiceTransactionTest @Autowired constructor(
   }
 
   @Test
-  fun withoutTransaction() {
+  fun `without transaction`() {
     // insert: success one and failed one
     service.insertFailedByUniqueWithoutTransaction()
       .test()
