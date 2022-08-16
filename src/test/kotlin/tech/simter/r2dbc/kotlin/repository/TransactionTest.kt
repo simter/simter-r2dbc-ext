@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.data.relational.core.query.Query
@@ -22,6 +23,7 @@ import tech.simter.r2dbc.UnitTestConfiguration
 @SpringJUnitConfig(UnitTestConfiguration::class)
 class TransactionTest @Autowired constructor(
   private val entityTemplate: R2dbcEntityTemplate,
+  private val repository: SampleRepository,
   private val service: SampleService
 ) {
   private fun getSample(): Mono<Sample> = entityTemplate
@@ -33,11 +35,11 @@ class TransactionTest @Autowired constructor(
   }
 
   @Test
-  fun `failed by unique with transaction`() {
+  fun `R2dbcEntityTemplate - rollback by unique id with transaction`() {
     // insert failed by transaction rollback
     service.insertFailedByUniqueWithTransaction()
       .test()
-      .expectError()
+      .expectError(DataIntegrityViolationException::class.java)
       .verify()
 
     // verify not insert
@@ -50,7 +52,7 @@ class TransactionTest @Autowired constructor(
    */
   @Disabled
   @Test
-  fun `failed by readonly transaction`() {
+  fun `R2dbcEntityTemplate - failed by readonly transaction`() {
     service.insertFailedByReadonlyTransaction()
       .test()
       .expectError()
@@ -58,16 +60,42 @@ class TransactionTest @Autowired constructor(
   }
 
   @Test
-  fun `without transaction`() {
+  fun `R2dbcEntityTemplate - without transaction`() {
     // insert: success one and failed one
     service.insertFailedByUniqueWithoutTransaction()
       .test()
-      .expectError()
+      .expectError(DataIntegrityViolationException::class.java)
       .verify()
 
     // verify the success one
     getSample().test()
       .expectNext(SampleService.SAMPLE)
       .verifyComplete()
+  }
+
+  @Test
+  fun `DatabaseClient 1 - rollback by unique id `() {
+    // insert failed by transaction rollback
+    service.databaseClientWithTransactionRollback1()
+      //.doOnError(System.out::println) // print out error
+      .test()
+      .expectError(DataIntegrityViolationException::class.java)
+      .verify()
+
+    // verify not insert
+    repository.findAll().test().verifyComplete()
+  }
+
+  @Test
+  fun `DatabaseClient 2 - rollback by unique id `() {
+    // insert failed by transaction rollback
+    service.databaseClientWithTransactionRollback2()
+      //.doOnError(System.out::println) // print out error
+      .test()
+      .expectError(DataIntegrityViolationException::class.java)
+      .verify()
+
+    // verify not insert
+    repository.findAll().test().verifyComplete()
   }
 }
