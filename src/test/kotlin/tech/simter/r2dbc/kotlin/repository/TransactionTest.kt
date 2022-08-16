@@ -30,7 +30,7 @@ class TransactionTest @Autowired constructor(
 
   @BeforeEach
   fun clear() {
-    entityTemplate.delete(SampleService.SAMPLE).subscribe()
+    sampleRepository.deleteAll().subscribe()
   }
 
   @Test
@@ -48,14 +48,15 @@ class TransactionTest @Autowired constructor(
   /**
    * 2020-12-17 RJ: Failed on spring-boot-2.4.1
    * 2022-08-09 RJ: Failed on spring-boot-2.7.2
+   * see https://github.com/spring-projects/spring-framework/issues/28966
    */
-  //@Disabled
   @Test
-  fun `insert with readonly transaction should failed`() {
-    sampleService.insertWithReadOnlyTransaction(Sample(id = 1, name = "test"))
+  fun `insert with readonly transaction also ok`() {
+    val sample = Sample(id = 1, name = "t1")
+    sampleService.insertWithReadOnlyTransaction(sample)
       .test()
-      .expectError()// should raise readonly transaction error
-      .verify()
+      .expectNext(sample)// no readonly transaction error
+      .verifyComplete()
   }
 
   @Test
