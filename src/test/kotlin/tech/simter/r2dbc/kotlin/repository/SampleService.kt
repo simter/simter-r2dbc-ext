@@ -11,6 +11,7 @@ import tech.simter.r2dbc.kotlin.insert
 class SampleService(
   private val databaseClient: DatabaseClient,
   private val entityTemplate: R2dbcEntityTemplate,
+  private val otherService: OtherService,
 ) {
   fun insertFailedByUniqueWithoutTransaction(): Mono<Sample> {
     return entityTemplate.insert(SAMPLE)
@@ -23,9 +24,15 @@ class SampleService(
       .then(entityTemplate.insert(SAMPLE))
   }
 
+  @Transactional(readOnly = false)
+  fun insertWithOtherServiceTransaction(sample: Sample): Mono<Sample> {
+    return entityTemplate.insert(sample)
+      .flatMap { otherService.insertWithTransaction(sample.copy(id = sample.id + 1)) }
+  }
+
   @Transactional(readOnly = true)
-  fun insertFailedByReadonlyTransaction(): Mono<Sample> {
-    return entityTemplate.insert(SAMPLE)
+  fun insertWithReadOnlyTransaction(sample: Sample): Mono<Sample> {
+    return entityTemplate.insert(sample)
   }
 
   @Transactional(readOnly = false)

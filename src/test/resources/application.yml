@@ -27,39 +27,19 @@ logging:
   file.name: target/test.log
   level: # TRACE < DEBUG < INFO < WARN < ERROR < FATAL < OFF
     root: ERROR
-    #org.springframework: WARN
-    tech.simter.r2dbc: WARN # INFO - show execute sql and custom r2dbc converters, DEBUG - show R2dbcProperties
-    tech.simter.embeddeddatabase: INFO # INFO - Starting embedded database: url=..., DEBUG - Load script
+    tech.simter.r2dbc: ERROR
+    #tech.simter.r2dbc.R2dbcConfiguration: INFO # INFO to show custom r2dbc converters register
 
-    # reactor .log()
-    #reactor: INFO
-    #reactor.Mono: INFO
-    #reactor.Flux: INFO
+    #---- spring data ----#
+    #org.springframework.data.convert.CustomConversions: DEBUG # DEBUG to show spring custom converter
+    #org.springframework.data.repository.core.support.RepositoryFactorySupport: DEBUG # DEBUG to show repository instance creation
+    #org.springframework.data.repository.config.RepositoryConfigurationDelegate: TRACE # TRACE to show repository delegate
 
     #---- spring r2dbc ----#
     #org.springframework.r2dbc.connection.init.ScriptUtils: DEBUG # DEBUG to show `Executing...[sql/h2/schema-drop.sql]`
-    #org.springframework.r2dbc.core.DefaultDatabaseClient: DEBUG # TRACE to show sql
+    #org.springframework.r2dbc.core.DefaultDatabaseClient: DEBUG # DEBUG to show sql
     #org.springframework.r2dbc.connection.R2dbcTransactionManager: DEBUG # DEBUG to show transaction
-
-    # reactive transaction
-    #org.springframework.transaction: TRACE
-    #org.springframework.transaction.interceptor: TRACE
-
-    #---- r2dbc client ----#
-    #org.springframework.data.r2dbc.core.DefaultDatabaseClient: DEBUG # DEBUG to show sql
-    #org.springframework.data.r2dbc.core.NamedParameterExpander: DEBUG # DEBUG to show sql
 
     #---- r2dbc driver----#
     #io.r2dbc.h2.client.SessionClient: DEBUG # DEBUG to show postgres request and Response
     #io.r2dbc.postgresql.client.ReactorNettyClient: DEBUG # DEBUG to show postgres request and Response
-
-    #---- jdbc ----#
-    org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseFactory: INFO # INFO - Starting embedded database: url='jdbc:h2:mem:...', username='sa'
-    #org.springframework.jdbc.datasource.init.ScriptUtils: DEBUG # DEBUG - show executing SQL script file and result
-
-    #---- embedded database ----#
-    #de.flapdoodle.embed: DEBUG
-    #de.flapdoodle.process.runtime.ProcessControl: DEBUG # DEBUG - Detected pid: 3252
-    #ru.yandex.qatools.embed: DEBUG
-    #ru.yandex.qatools.embed.postgresql.PostgresProcess: INFO # INFO - trying to stop postgresql
-    #com.wix.mysql.EmbeddedMysql: INFO # INFO - Preparing EmbeddedMysql version 'Version 5.7.19'...
