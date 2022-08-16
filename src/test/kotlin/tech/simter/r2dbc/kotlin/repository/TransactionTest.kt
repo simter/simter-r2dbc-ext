@@ -20,7 +20,7 @@ import tech.simter.r2dbc.UnitTestConfiguration
  */
 @DataR2dbcTest
 @SpringJUnitConfig(UnitTestConfiguration::class)
-class SampleServiceTransactionTest @Autowired constructor(
+class TransactionTest @Autowired constructor(
   private val entityTemplate: R2dbcEntityTemplate,
   private val service: SampleService
 ) {
