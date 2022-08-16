@@ -1,4 +1,4 @@
-package tech.simter.r2dbc
+package tech.simter.r2dbc.kotlin.repository
 
 import org.springframework.data.r2dbc.repository.R2dbcRepository
 

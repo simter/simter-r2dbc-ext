@@ -1,4 +1,4 @@
-package tech.simter.r2dbc
+package tech.simter.r2dbc.kotlin.repository
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
@@ -11,6 +11,7 @@ import org.springframework.data.relational.core.query.Query
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import reactor.core.publisher.Mono
 import reactor.kotlin.test.test
+import tech.simter.r2dbc.UnitTestConfiguration
 
 /**
  * Test Transactional.
@@ -28,7 +29,7 @@ class SampleServiceTransactionTest @Autowired constructor(
 
   @BeforeEach
   fun clear() {
-    entityTemplate.delete(SampleService.SAMPLE).block()
+    entityTemplate.delete(SampleService.SAMPLE).subscribe()
   }
 
   @Test
