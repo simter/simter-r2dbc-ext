@@ -294,3 +294,19 @@ fun DatabaseClient.exists(
     .first()
     .hasElement()
 }
+
+/**
+ * Extension for [DatabaseClient] to execute deletion.
+ *
+ * @param sql the delete sql
+ * @param params the param with not null value to bind, default is empty
+ * @return the deleted count
+ */
+fun DatabaseClient.delete(
+  sql: String,
+  params: Map<String, Any> = emptyMap(),
+): Mono<Int> {
+  return this.sql(sql)
+    .bind(params)
+    .fetch().rowsUpdated()
+}
