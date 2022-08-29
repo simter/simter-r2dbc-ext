@@ -245,6 +245,7 @@ inline fun <reified T : Any> DatabaseClient.selectFirstColumn(
  * @param valueMapper the specific mapper for convert the value in [sets] to the table-column-value,
  *        default use the value in [sets] as the table-column-value
  * @param nullValueTypes the param-value type when the value is null, the key is the param name, default is empty
+ * @return the updated count
  */
 fun DatabaseClient.update(
   table: String,
