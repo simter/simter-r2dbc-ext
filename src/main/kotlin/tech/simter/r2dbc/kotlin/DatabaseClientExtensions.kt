@@ -93,6 +93,7 @@ fun GenericExecuteSpec.bindNull(nameTypes: Map<String, Class<*>>): GenericExecut
  *        default use the underscore state of the property-name as the table-column-name
  * @param valueMapper the specific mapper for convert the property-value to the table-column-value,
  *        default use the property-value as the table-column-value
+ * @param externalColumnValues the external table-column-value add to the insert operation, default is empty map
  */
 inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   table: String,
@@ -101,7 +102,8 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   includeNullValue: Boolean = false,
   excludeNames: List<String> = emptyList(),
   nameMapper: Map<String, String> = emptyMap(),
-  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap()
+  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap(),
+  externalColumnValues: Map<String, Any> = emptyMap(),
 ): Mono<I> {
   // 1. collect property name-value-type
   val nameValueTypes: List<Triple<String, Any?, KClass<*>>> = T::class.memberProperties.filter {
@@ -112,16 +114,21 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
     .filterNot { !includeNullValue && it.second == null } // exclude null value property
 
   // 2. generate the insert SQL from entity properties
-  val nameValues = nameValueTypes.map { it.first to it.second }
+  val names = externalColumnValues.map { it.key } + nameValueTypes.map { it.first }
   val sql = """
     insert into $table (
-      ${nameValues.joinToString(", ") { if (nameMapper.contains(it.first)) nameMapper[it.first]!! else underscore(it.first) }}
+      ${names.joinToString(", ") { if (nameMapper.contains(it)) nameMapper[it]!! else underscore(it) }}
     ) values (
-      ${nameValues.joinToString(", ") { ":${it.first}" }}
+      ${names.joinToString(", ") { ":${it}" }}
     )""".trimIndent()
 
   // 3. bing entity property value
   var spec = this.sql(sql)
+
+  // bind external column-value
+  externalColumnValues.forEach { (k, v) -> spec = spec.bind(k, v) }
+
+  // bind entity property-value
   nameValueTypes
     // bind value with property-name as sql-param-marker
     .forEach { p ->
@@ -148,6 +155,7 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
  *        default use the underscore state of the property-name as the table-column-name
  * @param valueMapper the specific mapper for convert the property-value to the table-column-value,
  *        default use the property-value as the table-column-value
+ * @param externalColumnValues the external table-column-value add to the insert operation, default is empty map
  */
 inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.batchInsert(
   table: String,
@@ -155,7 +163,8 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.batchInsert(
   autoGenerateId: Boolean = true,
   excludeNames: List<String> = emptyList(),
   nameMapper: Map<String, String> = emptyMap(),
-  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap()
+  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap(),
+  externalColumnValues: Map<String, Any> = emptyMap(),
 ): Mono<List<I>> {
   if (entities.isEmpty()) return Mono.just(emptyList())
 
@@ -168,30 +177,29 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.batchInsert(
 
   // 2. generate the insert SQL from entity properties
   // insert into t(...) values (:p0, ...), (:p1, ...), ...
-  val nameProperties = namePropertyTypes.map { it.first to it.second }
+  val names = externalColumnValues.map { it.key } + namePropertyTypes.map { it.first }
   val sql = """
       insert into $table (
-         ${
-    nameProperties.joinToString(", ") {
-      if (nameMapper.contains(it.first)) nameMapper[it.first]!! else underscore(
-        it.first
-      )
-    }
-  }
+         ${names.joinToString(", ") { if (nameMapper.contains(it)) nameMapper[it]!! else underscore(it) }}
        ) values 
          ${
     List(entities.size) { i ->
-      nameProperties.joinToString(
+      names.joinToString(
         prefix = "(",
         separator = ", ",
         postfix = ")"
-      ) { ":${it.first}$i" }
+      ) { if (externalColumnValues.containsKey(it)) ":${it}" else ":${it}$i" }
     }.joinToString(",\r\n         ")
   }
     """.trimIndent()
 
   // 3. bing entity property value
   var spec = this.sql(sql)
+
+  // bind external column-value
+  externalColumnValues.forEach { (k, v) -> spec = spec.bind(k, v) }
+
+  // bind entity property-value
   List(entities.size) { i ->
     namePropertyTypes
       // bind value with property-name-rowIndex as sql-param-marker

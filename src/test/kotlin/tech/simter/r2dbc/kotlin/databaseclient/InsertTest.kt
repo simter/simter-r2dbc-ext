@@ -193,4 +193,31 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
       .expectNext("$theName-more")
       .verifyComplete()
   }
+
+  @Test
+  fun `with external column`() {
+    // insert
+    var id = 0
+    val pid = 100
+    databaseClient.insert(
+      table = "sample2",
+      entity = Sample2(ts = LocalDate.now()),
+      excludeNames = listOf("status"),
+      externalColumnValues = mapOf("pid" to pid),
+    ).test()
+      .assertNext {
+        id = it
+        assertThat(it).isGreaterThan(0)
+      }
+      .verifyComplete()
+
+    // verify
+    databaseClient.sql("select pid from sample2 where id = :id")
+      .bind("id", id)
+      .map { row: Row -> row.get("pid") as Int }
+      .one()
+      .test()
+      .expectNext(pid)
+      .verifyComplete()
+  }
 }

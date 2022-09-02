@@ -174,4 +174,29 @@ class BatchInsertTest @Autowired constructor(private val databaseClient: Databas
       .expectNext("${s.theName}-more")
       .verifyComplete()
   }
+
+  @Test
+  fun `insert with external column`() {
+    // insert
+    val pid = 100
+    val s = Sample2(id = 100, ts = LocalDate.now())
+    databaseClient.batchInsert(
+      table = "sample2",
+      entities = listOf(s),
+      autoGenerateId = false,
+      excludeNames = listOf("status", "createBy"),
+      externalColumnValues = mapOf("pid" to pid),
+    ).test()
+      .expectNext(listOf(s.id))
+      .verifyComplete()
+
+    // verify
+    databaseClient.sql("select pid from sample2 where id = :id")
+      .bind("id", s.id)
+      .map { row: Row -> row.get("pid") as Int }
+      .one()
+      .test()
+      .expectNext(pid)
+      .verifyComplete()
+  }
 }
