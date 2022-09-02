@@ -1,5 +1,19 @@
 # simter-r2dbc-ext changelog
 
+## 3.1.0 - 2022-09-02
+
+- Add extension method `DatabaseClient.select`
+- Add extension method `DatabaseClient.selectFirstRow`
+- Add extension method `DatabaseClient.selectFirstColumn`
+- Add extension method `DatabaseClient.insert`
+- Add extension method `DatabaseClient.batchInsert`
+- Add extension method `DatabaseClient.update`
+- Add extension method `DatabaseClient.exists`
+- Add extension method `DatabaseClient.delete`
+- Add extension method `DatabaseClient.bind(nameValues: Map<String, Any>): GenericExecuteSpec`
+- Add extension method `DatabaseClient.bindNull(nameTypes: Map<String, Class<*>>): GenericExecuteSpec`
+- Upgrade to simter-dependencies-3.0.1
+
 ## 3.0.0 - 2022-06-21
 
 - Upgrade to simter-dependencies-3.0.0 (jdk-17)
@@ -8,9 +22,9 @@
 
 - Upgrade to simter-dependencies-3.0.0-M3 (spring-boot-2.5.3)
 - Deprecated to auto config `ConnectionFactory`
-    > Prefer to use spring r2dbc standard way.
+  > Prefer to use spring r2dbc standard way.
 - Remove execute sql code in `R2dbcConfiguration`
-    > Use `spring.sql.init.schema-locations|data-locations` instead.
+  > Use `spring.sql.init.schema-locations|data-locations` instead.
 
 ## 3.0.0-M2 - 2021-04-21
 
@@ -20,7 +34,7 @@
 
 - Upgrade to simter-dependencies-3.0.0-M1
 - Config maven to compile java and kotlin code
-- Convert unit test java code to kotlin code 
+- Convert unit test java code to kotlin code
 - Add bindNullable extension method to `DatabaseClient.GenericExecuteSpec`
 - Add `Query.limit(Optional)` extension method
 
