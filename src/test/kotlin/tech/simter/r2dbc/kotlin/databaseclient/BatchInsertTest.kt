@@ -13,17 +13,17 @@ import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import reactor.kotlin.test.test
 import tech.simter.r2dbc.UnitTestConfiguration
+import tech.simter.r2dbc.kotlin.batchInsert
 import tech.simter.r2dbc.kotlin.databaseclient.Helper.clean
 import tech.simter.r2dbc.kotlin.databaseclient.Helper.initTable
 import tech.simter.r2dbc.kotlin.databaseclient.Sample2.Companion.STATUS_2_DB_VALUE
-import tech.simter.r2dbc.kotlin.insert
 import tech.simter.util.RandomUtils.randomString
 import java.time.LocalDate
 
 @DataR2dbcTest
 @SpringJUnitConfig(UnitTestConfiguration::class)
 @TestInstance(PER_CLASS)
-class InsertTest @Autowired constructor(private val databaseClient: DatabaseClient) {
+class BatchInsertTest @Autowired constructor(private val databaseClient: DatabaseClient) {
   @BeforeAll
   fun init() {
     initTable(databaseClient).subscribe()
@@ -35,133 +35,113 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
   }
 
   @Test
-  fun `default exclude null value`() {
-    // insert
-    var id = 0
-    val theName = randomString(6)
-    databaseClient.insert(
+  fun `insert nothing`() {
+    databaseClient.batchInsert(
       table = "sample2",
-      entity = Sample2(ts = LocalDate.now(), theName = theName),
-      excludeNames = listOf("status"),
-    ).test()
-      .assertNext {
-        id = it
-        assertThat(it).isGreaterThan(0)
-      }
-      .verifyComplete()
-
-    // verify
-    databaseClient.sql("select the_name from sample2 where id = :id")
-      .bind("id", id)
-      .map { row: Row -> row.get("the_name") as String }
-      .one()
-      .test()
-      .expectNext(theName)
-      .verifyComplete()
+      entities = emptyList<Sample2>()
+    ).test().expectNext(emptyList()).verifyComplete()
   }
 
   @Test
-  fun `custom id`() {
+  fun `insert one`() {
     // insert
-    val id = 100
-    val theName = randomString(6)
-    databaseClient.insert(
+    val s = Sample2(id = 100, ts = LocalDate.now(), theName = randomString(6))
+    databaseClient.batchInsert(
       table = "sample2",
-      entity = Sample2(id = id, ts = LocalDate.now(), theName = theName),
+      entities = listOf(s),
       autoGenerateId = false,
-      excludeNames = listOf("status"),
+      excludeNames = listOf("status", "createBy"),
     ).test()
-      .assertNext { assertThat(it).isEqualTo(id) }
+      .expectNext(listOf(s.id))
       .verifyComplete()
 
     // verify
     databaseClient.sql("select the_name from sample2 where id = :id")
-      .bind("id", id)
+      .bind("id", s.id)
       .map { row: Row -> row.get("the_name") as String }
-      .one()
+      .all()
       .test()
-      .expectNext(theName)
+      .expectNext(s.theName!!)
       .verifyComplete()
   }
 
   @Test
-  fun `with exclude names`() {
+  fun `insert with custom id`() {
     // insert
-    var id = 0
-    val theName = randomString(6)
-    databaseClient.insert(
+    val s1 = Sample2(id = 100, ts = LocalDate.now(), theName = randomString(6))
+    val s2 = Sample2(id = 101, ts = LocalDate.now(), theName = randomString(6))
+    databaseClient.batchInsert(
       table = "sample2",
-      entity = Sample2(ts = LocalDate.now(), theName = theName),
-      excludeNames = listOf("name", "status"),
+      entities = listOf(s1, s2),
+      autoGenerateId = false,
+      excludeNames = listOf("status", "createBy"),
+    ).test()
+      .assertNext { assertThat(it).isEqualTo(listOf(s1.id, s2.id)) }
+      .verifyComplete()
+
+    // verify
+    databaseClient.sql("select the_name from sample2 where id in (:ids) order by id asc")
+      .bind("ids", listOf(s1.id, s2.id))
+      .map { row: Row -> row.get("the_name") as String }
+      .all()
+      .test()
+      .expectNext(s1.theName!!)
+      .expectNext(s2.theName!!)
+      .verifyComplete()
+  }
+
+  @Test
+  fun `insert with auto id`() {
+    // insert
+    val s1 = Sample2(id = 0, ts = LocalDate.now(), theName = randomString(6))
+    val s2 = Sample2(id = 0, ts = LocalDate.now(), theName = randomString(6))
+    val autoIds = mutableListOf<Int>()
+    databaseClient.batchInsert(
+      table = "sample2",
+      entities = listOf(s1, s2),
+      autoGenerateId = true,
+      excludeNames = listOf("status", "createBy"),
     ).test()
       .assertNext {
-        id = it
-        assertThat(it).isGreaterThan(0)
+        assertThat(it[0]).isGreaterThan(0)
+        assertThat(it[1]).isGreaterThan(it[0])
+        autoIds.add(it[0])
+        autoIds.add(it[1])
       }
       .verifyComplete()
 
     // verify
-    databaseClient.sql("select the_name from sample2 where id = :id")
-      .bind("id", id)
+    databaseClient.sql("select the_name from sample2 where id in (:ids) order by id asc")
+      .bind("ids", autoIds)
       .map { row: Row -> row.get("the_name") as String }
-      .one()
+      .all()
       .test()
-      .expectNext(theName)
+      .expectNext(s1.theName!!)
+      .expectNext(s2.theName!!)
       .verifyComplete()
   }
 
   @Test
   fun `with name mapper`() {
     // insert
-    var id = 0
-    val createBy = randomString(6)
-    databaseClient.insert(
+    val s = Sample2(id = 100, ts = LocalDate.now(), createBy = randomString(6))
+    databaseClient.batchInsert(
       table = "sample2",
-      entity = Sample2(ts = LocalDate.now(), createBy = createBy),
+      entities = listOf(s),
+      autoGenerateId = false,
       nameMapper = mapOf("createBy" to "creator"),
       excludeNames = listOf("status"),
     ).test()
-      .assertNext {
-        id = it
-        assertThat(it).isGreaterThan(0)
-      }
+      .expectNext(listOf(s.id))
       .verifyComplete()
 
     // verify
     databaseClient.sql("select creator from sample2 where id = :id")
-      .bind("id", id)
+      .bind("id", s.id)
       .map { row: Row -> row.get("creator") as String }
       .one()
       .test()
-      .expectNext(createBy)
-      .verifyComplete()
-  }
-
-  @Test
-  fun `with name mapper and include null value`() {
-    // insert
-    var id = 0
-    val createBy = randomString(6)
-    databaseClient.insert(
-      table = "sample2",
-      entity = Sample2(ts = LocalDate.now(), createBy = createBy),
-      includeNullValue = true,
-      nameMapper = mapOf("createBy" to "creator"),
-      excludeNames = listOf("status"),
-    ).test()
-      .assertNext {
-        id = it
-        assertThat(it).isGreaterThan(0)
-      }
-      .verifyComplete()
-
-    // verify
-    databaseClient.sql("select creator from sample2 where id = :id")
-      .bind("id", id)
-      .map { row: Row -> row.get("creator") as String }
-      .one()
-      .test()
-      .expectNext(createBy)
+      .expectNext(s.createBy!!)
       .verifyComplete()
   }
 
@@ -169,18 +149,19 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
   fun `with value mapper`() {
     // insert
     var id = 0
-    val theName = randomString(6)
-    databaseClient.insert(
+    val s = Sample2(id = id, ts = LocalDate.now(), theName = randomString(6))
+    databaseClient.batchInsert(
       table = "sample2",
-      entity = Sample2(ts = LocalDate.now(), theName = theName),
+      entities = listOf(s),
       valueMapper = mapOf(
         "theName" to { value -> "$value-more" },
         STATUS_2_DB_VALUE,
       ),
+      excludeNames = listOf("createBy"),
     ).test()
       .assertNext {
-        id = it
-        assertThat(it).isGreaterThan(0)
+        id = it[0]
+        assertThat(id).isGreaterThan(0)
       }
       .verifyComplete()
 
@@ -190,30 +171,28 @@ class InsertTest @Autowired constructor(private val databaseClient: DatabaseClie
       .map { row: Row -> row.get("the_name") as String }
       .one()
       .test()
-      .expectNext("$theName-more")
+      .expectNext("${s.theName}-more")
       .verifyComplete()
   }
 
   @Test
-  fun `with external column`() {
+  fun `insert with external column`() {
     // insert
-    var id = 0
     val pid = 100
-    databaseClient.insert(
+    val s = Sample2(id = 100, ts = LocalDate.now())
+    databaseClient.batchInsert(
       table = "sample2",
-      entity = Sample2(ts = LocalDate.now()),
-      excludeNames = listOf("status"),
+      entities = listOf(s),
+      autoGenerateId = false,
+      excludeNames = listOf("status", "createBy"),
       externalColumnValues = mapOf("pid" to pid),
     ).test()
-      .assertNext {
-        id = it
-        assertThat(it).isGreaterThan(0)
-      }
+      .expectNext(listOf(s.id))
       .verifyComplete()
 
     // verify
     databaseClient.sql("select pid from sample2 where id = :id")
-      .bind("id", id)
+      .bind("id", s.id)
       .map { row: Row -> row.get("pid") as Int }
       .one()
       .test()

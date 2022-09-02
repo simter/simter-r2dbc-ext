@@ -13,6 +13,7 @@ object Helper {
           """
         create table sample2(
           id serial primary key,
+          pid int,
           ts date not null,
           status varchar(255),
           the_name varchar(255),

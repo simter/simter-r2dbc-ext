@@ -13,6 +13,7 @@ import java.util.*
 import java.util.function.Function
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
+import kotlin.reflect.KProperty1
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
@@ -92,6 +93,7 @@ fun GenericExecuteSpec.bindNull(nameTypes: Map<String, Class<*>>): GenericExecut
  *        default use the underscore state of the property-name as the table-column-name
  * @param valueMapper the specific mapper for convert the property-value to the table-column-value,
  *        default use the property-value as the table-column-value
+ * @param externalColumnValues the external table-column-value add to the insert operation, default is empty map
  */
 inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   table: String,
@@ -100,7 +102,8 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   includeNullValue: Boolean = false,
   excludeNames: List<String> = emptyList(),
   nameMapper: Map<String, String> = emptyMap(),
-  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap()
+  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap(),
+  externalColumnValues: Map<String, Any> = emptyMap(),
 ): Mono<I> {
   // 1. collect property name-value-type
   val nameValueTypes: List<Triple<String, Any?, KClass<*>>> = T::class.memberProperties.filter {
@@ -111,16 +114,21 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
     .filterNot { !includeNullValue && it.second == null } // exclude null value property
 
   // 2. generate the insert SQL from entity properties
-  val nameValues = nameValueTypes.map { it.first to it.second }
+  val names = externalColumnValues.map { it.key } + nameValueTypes.map { it.first }
   val sql = """
     insert into $table (
-      ${nameValues.joinToString(", ") { if (nameMapper.contains(it.first)) nameMapper[it.first]!! else underscore(it.first) }}
+      ${names.joinToString(", ") { if (nameMapper.contains(it)) nameMapper[it]!! else underscore(it) }}
     ) values (
-      ${nameValues.joinToString(", ") { ":${it.first}" }}
+      ${names.joinToString(", ") { ":${it}" }}
     )""".trimIndent()
 
   // 3. bing entity property value
   var spec = this.sql(sql)
+
+  // bind external column-value
+  externalColumnValues.forEach { (k, v) -> spec = spec.bind(k, v) }
+
+  // bind entity property-value
   nameValueTypes
     // bind value with property-name as sql-param-marker
     .forEach { p ->
@@ -134,6 +142,82 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.insert(
   else spec.filter { s -> s.returnGeneratedValues("id") }
     .map { row: Row -> row.get("id") as I }                     // get auto generated id
     .one()
+}
+
+/**
+ * Extension for [DatabaseClient] to batch insert by entity and return its custom-id or auto-generated-id.
+ *
+ * @param entities the data holder
+ * @param table the table name
+ * @param autoGenerateId whether the insertion use the auto-generate-id strategy, default is true
+ * @param excludeNames all the property name to exclude, default is empty list
+ * @param nameMapper the specific mapper for convert the property-name to the table-column-name,
+ *        default use the underscore state of the property-name as the table-column-name
+ * @param valueMapper the specific mapper for convert the property-value to the table-column-value,
+ *        default use the property-value as the table-column-value
+ * @param externalColumnValues the external table-column-value add to the insert operation, default is empty map
+ */
+inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.batchInsert(
+  table: String,
+  entities: List<T>,
+  autoGenerateId: Boolean = true,
+  excludeNames: List<String> = emptyList(),
+  nameMapper: Map<String, String> = emptyMap(),
+  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap(),
+  externalColumnValues: Map<String, Any> = emptyMap(),
+): Mono<List<I>> {
+  if (entities.isEmpty()) return Mono.just(emptyList())
+
+  // 1. collect property name-kProperty-type
+  val namePropertyTypes: List<Triple<String, KProperty1<T, *>, KClass<*>>> = T::class.memberProperties.filter {
+    it.visibility == KVisibility.PUBLIC                 // only public properties
+      && !excludeNames.contains(it.name)                // exclude specific property
+      && if (it.name == "id") !autoGenerateId else true // exclude id property
+  }.map { Triple(it.name, it, it.returnType.classifier as KClass<*>) }
+
+  // 2. generate the insert SQL from entity properties
+  // insert into t(...) values (:p0, ...), (:p1, ...), ...
+  val names = externalColumnValues.map { it.key } + namePropertyTypes.map { it.first }
+  val sql = """
+      insert into $table (
+         ${names.joinToString(", ") { if (nameMapper.contains(it)) nameMapper[it]!! else underscore(it) }}
+       ) values 
+         ${
+    List(entities.size) { i ->
+      names.joinToString(
+        prefix = "(",
+        separator = ", ",
+        postfix = ")"
+      ) { if (externalColumnValues.containsKey(it)) ":${it}" else ":${it}$i" }
+    }.joinToString(",\r\n         ")
+  }
+    """.trimIndent()
+
+  // 3. bing entity property value
+  var spec = this.sql(sql)
+
+  // bind external column-value
+  externalColumnValues.forEach { (k, v) -> spec = spec.bind(k, v) }
+
+  // bind entity property-value
+  List(entities.size) { i ->
+    namePropertyTypes
+      // bind value with property-name-rowIndex as sql-param-marker
+      .forEach { p ->
+        val value =
+          if (valueMapper.contains(p.first)) valueMapper[p.first]!!.invoke(p.second.get(entities[i])) else p.second.get(
+            entities[i]
+          )
+        spec = if (value != null) spec.bind("${p.first}$i", value) // bind not null value
+        else spec.bindNull("${p.first}$i", p.third.javaObjectType) // bind null value
+      }
+  }
+  // 4. execute and return id
+  return if (!autoGenerateId) spec.then().thenReturn(entities.map { it.id }) // return the custom id
+  else spec.filter { s -> s.returnGeneratedValues("id") }
+    .map { row: Row -> row.get("id") as I }                     // get auto generated id
+    .all()
+    .collectList()
 }
 
 /**
@@ -245,6 +329,7 @@ inline fun <reified T : Any> DatabaseClient.selectFirstColumn(
  * @param valueMapper the specific mapper for convert the value in [sets] to the table-column-value,
  *        default use the value in [sets] as the table-column-value
  * @param nullValueTypes the param-value type when the value is null, the key is the param name, default is empty
+ * @return the updated count
  */
 fun DatabaseClient.update(
   table: String,
@@ -293,4 +378,20 @@ fun DatabaseClient.exists(
     .fetch()
     .first()
     .hasElement()
+}
+
+/**
+ * Extension for [DatabaseClient] to execute deletion.
+ *
+ * @param sql the delete sql
+ * @param params the param with not null value to bind, default is empty
+ * @return the deleted count
+ */
+fun DatabaseClient.delete(
+  sql: String,
+  params: Map<String, Any> = emptyMap(),
+): Mono<Int> {
+  return this.sql(sql)
+    .bind(params)
+    .fetch().rowsUpdated()
 }
