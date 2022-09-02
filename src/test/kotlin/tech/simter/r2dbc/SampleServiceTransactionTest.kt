@@ -45,6 +45,7 @@ class SampleServiceTransactionTest @Autowired constructor(
 
   /**
    * 2020-12-17 RJ: Failed on spring-boot-2.4.1
+   * 2022-08-09 RJ: Failed on spring-boot-2.7.2
    */
   @Disabled
   @Test
