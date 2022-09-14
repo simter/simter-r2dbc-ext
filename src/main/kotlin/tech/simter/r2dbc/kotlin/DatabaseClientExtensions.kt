@@ -8,6 +8,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import tech.simter.kotlin.data.Id
+import tech.simter.util.StringUtils
 import tech.simter.util.StringUtils.underscore
 import java.util.*
 import java.util.function.Function
@@ -315,6 +316,42 @@ inline fun <reified T : Any> DatabaseClient.selectFirstColumn(
   return this.sql(sql).bind(params)
     .map { row -> valueMapper?.apply(row.get(0)) ?: row.get(0, T::class.javaObjectType) }
     .all() as Flux<T>
+}
+
+/**
+ * Extension for [DatabaseClient] to select sql to `Flux<Map<String, Any?>>`.
+ *
+ * @param sql the query sql
+ * @param params the param with not null value to bind, default is empty
+ * @param valueTypes specific the return value java type, the key is the return Map's key
+ * @param nameMapper the specific mapper for convert the alias-name to the return Map's key,
+ *        default use the came-case state of the alias-name as the return Map's key
+ * @param valueMapper the specific mapper for convert the table-column-value to the Map's value,
+ *        default is empty and no mapper
+ */
+inline fun DatabaseClient.selectToMap(
+  sql: String,
+  params: Map<String, Any> = emptyMap(),
+  valueTypes: Map<String, Class<*>>,
+  crossinline nameMapper: (String) -> String = StringUtils::camelcase,
+  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap(),
+): Flux<Map<String, Any?>> {
+  return this.sql(sql).bind(params)
+    .map { row: Row ->
+      // convert row to map
+      // notes: the alias name of database return is always uppercase
+      row.metadata.columnMetadatas.associate {
+        val mappedName = nameMapper.invoke(it.name)
+        mappedName to if (valueMapper.contains(mappedName)) valueMapper[mappedName]!!.invoke(row.get(it.name))
+        else {
+          row.get(
+            it.name,
+            valueTypes[mappedName]
+              ?: throw IllegalArgumentException("Missing value-type config for name '${mappedName}'")
+          )
+        }
+      }
+    }.all()
 }
 
 /**
