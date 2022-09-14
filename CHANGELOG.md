@@ -1,5 +1,9 @@
 # simter-r2dbc-ext changelog
 
+## 3.2.0 - 2022-09-14
+
+- Add extension method `DatabaseClient.selectToMap`
+
 ## 3.1.0 - 2022-09-02
 
 - Add extension method `DatabaseClient.select`
