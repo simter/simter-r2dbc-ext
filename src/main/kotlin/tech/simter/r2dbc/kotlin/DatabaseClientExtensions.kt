@@ -83,6 +83,63 @@ fun GenericExecuteSpec.bindNull(nameTypes: Map<String, Class<*>>): GenericExecut
 }
 
 /**
+ * Extension for [DatabaseClient] to insert by entity and return the finished signal.
+ *
+ * @param entity the data holder
+ * @param table the table name
+ * @param includeNullValue whether to insert with null value property, default is false
+ * @param excludeNames all the property name to exclude, default is empty list
+ * @param nameMapper the specific mapper for convert the property-name to the table-column-name,
+ *        default use the underscore state of the property-name as the table-column-name
+ * @param valueMapper the specific mapper for convert the property-value to the table-column-value,
+ *        default use the property-value as the table-column-value
+ * @param externalColumnValues the external table-column-value add to the insert operation, default is empty map
+ */
+inline fun <reified T : Any> DatabaseClient.insertAny(
+  table: String,
+  entity: T,
+  includeNullValue: Boolean = false,
+  excludeNames: List<String> = emptyList(),
+  nameMapper: Map<String, String> = emptyMap(),
+  valueMapper: Map<String, (value: Any?) -> Any?> = emptyMap(),
+  externalColumnValues: Map<String, Any> = emptyMap(),
+): Mono<Void> {
+  // 1. collect property name-value-type
+  val nameValueTypes: List<Triple<String, Any?, KClass<*>>> = T::class.memberProperties.filter {
+    it.visibility == KVisibility.PUBLIC                 // only public properties
+      && !excludeNames.contains(it.name)                // exclude specific property
+  }.map { Triple(it.name, it.get(entity), it.returnType.classifier as KClass<*>) }
+    .filterNot { !includeNullValue && it.second == null } // exclude null value property
+
+  // 2. generate the insert SQL from entity properties
+  val names = externalColumnValues.map { it.key } + nameValueTypes.map { it.first }
+  val sql = """
+    insert into $table (
+      ${names.joinToString(", ") { if (nameMapper.contains(it)) nameMapper[it]!! else underscore(it) }}
+    ) values (
+      ${names.joinToString(", ") { ":${it}" }}
+    )""".trimIndent()
+
+  // 3. bing entity property value
+  var spec = this.sql(sql)
+
+  // bind external column-value
+  externalColumnValues.forEach { (k, v) -> spec = spec.bind(k, v) }
+
+  // bind entity property-value
+  nameValueTypes
+    // bind value with property-name as sql-param-marker
+    .forEach { p ->
+      val value = if (valueMapper.contains(p.first)) valueMapper[p.first]!!.invoke(p.second) else p.second
+      spec = if (value != null) spec.bind(p.first, value) // bind not null value
+      else spec.bindNull(p.first, p.third.javaObjectType) // bind null value
+    }
+
+  // 4. execute and return the number of inserted rows
+  return spec.then()
+}
+
+/**
  * Extension for [DatabaseClient] to insert by entity and return its custom-id or auto-generated-id.
  *
  * @param entity the data holder
