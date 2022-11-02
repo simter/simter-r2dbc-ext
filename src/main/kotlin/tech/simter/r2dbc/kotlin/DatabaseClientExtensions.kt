@@ -237,19 +237,19 @@ inline fun <reified T : Id<I>, reified I : Any> DatabaseClient.batchInsert(
   // insert into t(...) values (:p0, ...), (:p1, ...), ...
   val names = externalColumnValues.map { it.key } + namePropertyTypes.map { it.first }
   val sql = """
-      insert into $table (
-         ${names.joinToString(", ") { if (nameMapper.contains(it)) nameMapper[it]!! else underscore(it) }}
-       ) values 
-         ${
+      |insert into $table (
+      |  ${names.joinToString(", ") { if (nameMapper.contains(it)) nameMapper[it]!! else underscore(it) }}
+      |) values 
+      |  ${
     List(entities.size) { i ->
       names.joinToString(
         prefix = "(",
         separator = ", ",
         postfix = ")"
       ) { if (externalColumnValues.containsKey(it)) ":${it}" else ":${it}$i" }
-    }.joinToString(",\r\n         ")
+    }.joinToString(",\r\n|  ")
   }
-    """.trimIndent()
+    """.trimMargin()
 
   // 3. bing entity property value
   var spec = this.sql(sql)
