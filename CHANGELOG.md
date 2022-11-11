@@ -1,5 +1,10 @@
 # simter-r2dbc-ext changelog
 
+## 3.3.0 - 2022-11-11
+
+- Upgrade to simter-dependencies-3.4.0
+- Add extension method `DatabaseClient.insertAny`
+
 ## 3.2.0 - 2022-09-14
 
 - Add extension method `DatabaseClient.selectToMap`
